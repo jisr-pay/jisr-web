@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Jisr Pay"
+version = "1.0.0"
+id = "artifacts/jisr-pay"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24519
+
+[services.development]
+run = "pnpm --filter @workspace/jisr-pay run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/jisr-pay", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/jisr-pay/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24519"
+BASE_PATH = "/"
