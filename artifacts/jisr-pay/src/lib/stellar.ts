@@ -12,6 +12,7 @@ import {
 import {
   requestAccess,
   signTransaction as freighterSignTransaction,
+  getNetworkDetails,
 } from '@stellar/freighter-api';
 import {
   CONTRACT_ID,
@@ -21,6 +22,78 @@ import {
   TOKEN_ADDRESS,
   TREASURY_ADDRESS,
 } from './corridors';
+import { createLogger } from './logger';
+import { AppError, classifyError } from './errors';
+
+const log = createLogger('stellar');
+
+// Retries a read-only network call on transient failures (network blips, RPC
+// rate limits) with exponential backoff. Never retries deterministic errors
+// like "account not found" or a user rejection.
+async function withRetry<T>(
+  label: string,
+  fn: () => Promise<T>,
+  retries = 2,
+  baseDelay = 600,
+): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (e) {
+      lastErr = e;
+      const code = classifyError(e);
+      if (code !== 'NETWORK' && code !== 'RATE_LIMITED' && code !== 'TIMEOUT') throw e;
+      if (attempt === retries) break;
+      const delay = baseDelay * 2 ** attempt;
+      log.warn(`${label} transient failure — retrying in ${delay}ms`, { attempt, code });
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw lastErr;
+}
+
+// Parses a human amount into i128 stroops, rejecting malformed / out-of-range
+// input (non-numeric, <= 0, > 7 decimal places, absurdly large).
+function parseAmountToStroops(amount: string): bigint {
+  const trimmed = amount.trim();
+  const n = Number(trimmed);
+  if (!Number.isFinite(n) || n <= 0) {
+    throw new AppError('UNKNOWN', 'Enter a valid amount greater than zero.');
+  }
+  const decimals = trimmed.includes('.') ? trimmed.split('.')[1] ?? '' : '';
+  if (decimals.length > 7) {
+    throw new AppError('UNKNOWN', 'Amount can have at most 7 decimal places.');
+  }
+  const stroops = BigInt(Math.round(n * 10_000_000));
+  if (stroops <= 0n) {
+    throw new AppError('UNKNOWN', 'Amount must be greater than zero.');
+  }
+  if (stroops > 900_000_000_000_000_000n) {
+    throw new AppError('UNKNOWN', 'Amount is too large.');
+  }
+  return stroops;
+}
+
+// Best-effort guard: if Freighter is on a non-testnet network the payment would
+// sign against the wrong chain. If we can read the network and it isn't testnet,
+// stop early with a clear message. If we can't read it, proceed (signing still
+// targets testnet) rather than blocking a legitimate payment.
+async function assertTestnetNetwork(): Promise<void> {
+  let details;
+  try {
+    details = await getNetworkDetails();
+  } catch {
+    return;
+  }
+  if (details && !details.error && details.networkPassphrase &&
+      details.networkPassphrase !== Networks.TESTNET) {
+    throw new AppError(
+      'WRONG_NETWORK',
+      'Freighter is set to the wrong network. Switch it to Test Net and try again.',
+    );
+  }
+}
 
 // On desktop we assume Freighter *may* be present and let the actual connect
 // attempt be the source of truth — a pre-check (isConnected) is unreliable and
@@ -53,23 +126,40 @@ export async function resolveFederation(address: string): Promise<string> {
     return input;
   }
   if (input.includes('*')) {
-    const res = await fetch(
-      `${FEDERATION_API_BASE}/federation?q=${encodeURIComponent(input)}`,
-    );
+    log.info('Resolving federation address', { input });
+    let res: Response;
+    try {
+      res = await withRetry('federation', () =>
+        fetch(`${FEDERATION_API_BASE}/federation?q=${encodeURIComponent(input)}`),
+      );
+    } catch (e) {
+      log.error('Federation request failed', e);
+      throw new AppError(
+        'DIRECTORY_UNAVAILABLE',
+        'The recipient directory is temporarily unavailable. Try again shortly, or paste the recipient’s Stellar address (G…).',
+      );
+    }
     if (res.status === 404) {
-      throw new Error(`Recipient "${input}" not found in the federation directory`);
+      throw new AppError('RECIPIENT_NOT_FOUND', `Recipient "${input}" not found in the federation directory`);
     }
     if (!res.ok) {
-      throw new Error(`Federation lookup failed (HTTP ${res.status})`);
+      throw new AppError('DIRECTORY_UNAVAILABLE', `Federation lookup failed (HTTP ${res.status})`);
     }
-    const record = await res.json();
+    let record: { account_id?: string };
+    try {
+      record = await res.json();
+    } catch {
+      throw new AppError('DIRECTORY_UNAVAILABLE', 'The recipient directory returned an unreadable response.');
+    }
     if (!record.account_id || !StrKey.isValidEd25519PublicKey(record.account_id)) {
-      throw new Error('Federation record did not contain a valid Stellar account');
+      throw new AppError('RECIPIENT_NOT_FOUND', 'Federation record did not contain a valid Stellar account');
     }
+    log.info('Federation resolved', { account_id: record.account_id });
     return record.account_id;
   }
-  throw new Error(
-    'Enter a Stellar public key (G...) or a federation address like alice*jisr.pay',
+  throw new AppError(
+    'UNKNOWN',
+    'Enter a Stellar public key (G…) or a federation address like alice*jisr.pay',
   );
 }
 
@@ -90,18 +180,26 @@ export async function buildAndSubmitPayment(
 ): Promise<TransactionResult> {
   const server = new rpc.Server(SOROBAN_RPC_URL);
 
+  // Validate the amount before anything network-related.
+  const stroops = parseAmountToStroops(amountXLM);
+
+  // Stop early if the wallet is on the wrong network.
+  await assertTestnetNetwork();
+
+  log.info('Building payment', { senderKey, recipientKey, stroops: stroops.toString() });
+
   let account;
   try {
-    account = await server.getAccount(senderKey);
-  } catch {
-    throw new Error(
+    account = await withRetry('getAccount', () => server.getAccount(senderKey));
+  } catch (e) {
+    const code = classifyError(e);
+    if (code === 'NETWORK' || code === 'RATE_LIMITED') {
+      throw e; // surfaced as a friendly network message upstream
+    }
+    throw new AppError(
+      'NOT_FUNDED',
       `Sender account is not funded on testnet. Fund it at https://friendbot.stellar.org/?addr=${senderKey} and try again.`,
     );
-  }
-
-  const stroops = BigInt(Math.round(Number(amountXLM) * 10_000_000));
-  if (stroops <= 0n) {
-    throw new Error('Amount must be greater than zero');
   }
 
   const contract = new Contract(CONTRACT_ID);
@@ -122,16 +220,22 @@ export async function buildAndSubmitPayment(
     .setTimeout(60)
     .build();
 
-  const prepared = await server.prepareTransaction(transaction);
+  const prepared = await withRetry('prepareTransaction', () =>
+    server.prepareTransaction(transaction),
+  );
 
+  log.info('Requesting signature from Freighter');
   const signResult = await freighterSignTransaction(prepared.toXDR(), {
     networkPassphrase: Networks.TESTNET,
     address: senderKey,
   });
   if (signResult.error) {
-    throw new Error(
-      `Freighter could not sign the transaction: ${signResult.error}`,
-    );
+    const errStr =
+      typeof signResult.error === 'string'
+        ? signResult.error
+        : JSON.stringify(signResult.error);
+    log.warn('Freighter signing failed', errStr);
+    throw new AppError(classifyError(errStr), `Freighter could not sign the transaction: ${errStr}`);
   }
 
   const signedTx = TransactionBuilder.fromXDR(
@@ -140,9 +244,12 @@ export async function buildAndSubmitPayment(
   );
 
   const start = Date.now();
+  log.info('Submitting to Soroban RPC');
   const sendResponse = await server.sendTransaction(signedTx);
   if (sendResponse.status === 'ERROR') {
-    throw new Error(
+    log.error('Soroban RPC rejected transaction', sendResponse);
+    throw new AppError(
+      'CONTRACT_FAILED',
       `Transaction rejected by Soroban RPC (hash ${sendResponse.hash})`,
     );
   }
@@ -157,14 +264,17 @@ export async function buildAndSubmitPayment(
     getResponse = await server.getTransaction(sendResponse.hash);
   }
   if (getResponse.status === rpc.Api.GetTransactionStatus.FAILED) {
-    throw new Error(`Transaction ${sendResponse.hash} failed on-chain`);
+    log.error('Transaction failed on-chain', { hash: sendResponse.hash });
+    throw new AppError('CONTRACT_FAILED', `Transaction ${sendResponse.hash} failed on-chain`);
   }
   if (getResponse.status !== rpc.Api.GetTransactionStatus.SUCCESS) {
-    throw new Error(
+    throw new AppError(
+      'TIMEOUT',
       `Timed out waiting for confirmation of transaction ${sendResponse.hash}`,
     );
   }
 
+  log.info('Payment confirmed', { hash: sendResponse.hash, ledger: getResponse.ledger });
   return {
     hash: sendResponse.hash,
     feePaid: `${(Number(prepared.fee) / 10_000_000).toFixed(7)} XLM`,
@@ -201,8 +311,9 @@ export async function pollSettlement(
       continue;
     }
     if (tx.successful === false) {
-      throw new Error(`Transaction ${hash} failed on-chain (ledger ${tx.ledger_attr})`);
+      throw new AppError('CONTRACT_FAILED', `Transaction ${hash} failed on-chain (ledger ${tx.ledger_attr})`);
     }
+    log.info('Settlement confirmed on Horizon', { hash: tx.hash, ledger: tx.ledger_attr });
     onUpdate('settled');
     return {
       hash: tx.hash,
@@ -212,5 +323,5 @@ export async function pollSettlement(
       createdAt: tx.created_at,
     };
   }
-  throw new Error('Settlement timeout — transaction not found on Horizon');
+  throw new AppError('TIMEOUT', 'Settlement timeout — transaction not yet found on Horizon. It may still confirm; check the explorer.');
 }

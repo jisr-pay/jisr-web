@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowRight, Search, Activity, Link as LinkIcon, AlertCircle,
@@ -11,10 +11,15 @@ import {
   CORRIDORS, calculateTotal, formatSpeed, getBestCorridor, Corridor, 
   CONTRACT_ID 
 } from '@/lib/corridors';
-import { 
-  detectWalletEnvironment, connectFreighter, resolveFederation, 
-  buildAndSubmitPayment, pollSettlement, TransactionResult 
+import {
+  detectWalletEnvironment, connectFreighter, resolveFederation,
+  buildAndSubmitPayment, pollSettlement, TransactionResult
 } from '@/lib/stellar';
+import { createLogger } from '@/lib/logger';
+import { toUserMessage } from '@/lib/errors';
+import { enforce, retryAfter, RULES } from '@/lib/rateLimit';
+
+const log = createLogger('pipeline');
 import confetti from 'canvas-confetti';
 
 type Step = 'idle' | 'step1' | 'step2' | 'step3' | 'done';
@@ -49,6 +54,25 @@ export function AgentPipeline() {
   // Error state — every failure in the pipeline surfaces here
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Refs for cleanup: the scan interval and a mounted flag so we never call
+  // setState after the component unmounts (React warning + leaked timers).
+  const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+    };
+  }, []);
+
+  const showError = (e: unknown) => {
+    const msg = toUserMessage(e);
+    log.error('Pipeline error', e);
+    if (mountedRef.current) setError(msg);
+  };
 
   const handleCopyHash = async () => {
     if (!txResult) return;
@@ -92,18 +116,37 @@ export function AgentPipeline() {
   }, []);
 
   const handleStart = () => {
-    if (!amount || !recipient || isNaN(Number(amount)) || Number(amount) <= 0) return;
+    const value = Number(amount);
+    if (!amount || !recipient.trim() || !Number.isFinite(value) || value <= 0) {
+      setError('Enter an amount greater than zero and a recipient.');
+      return;
+    }
+    // Client-side rate limit — don't let repeated clicks spam the scan.
+    const wait = retryAfter('findRoute', RULES.findRoute);
+    if (wait > 0) {
+      setError(`Please wait ${Math.ceil(wait / 1000)}s before searching again.`);
+      return;
+    }
+    enforce('findRoute', RULES.findRoute);
+
     setError(null);
     setStep('step1');
     setIsScanning(true);
     setScannedCorridors([]);
-    
+
+    // Clear any previous scan so rapid restarts can't stack intervals.
+    if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+
     // Reveal corridors one at a time. Capture the corridor into a local const
     // BEFORE calling setState: the functional updater runs when React flushes
     // it (after index++ has already executed), so reading index inside it would
     // read a stale, out-of-range value and push undefined.
     let index = 0;
-    const interval = setInterval(() => {
+    scanIntervalRef.current = setInterval(() => {
+      if (!mountedRef.current) {
+        if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+        return;
+      }
       if (index < CORRIDORS.length) {
         const corridor = CORRIDORS[index];
         index++;
@@ -111,8 +154,10 @@ export function AgentPipeline() {
           [...prev, corridor].sort((a, b) => a.feePercent - b.feePercent),
         );
       } else {
-        clearInterval(interval);
-        setTimeout(() => setIsScanning(false), 500);
+        if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+        setTimeout(() => {
+          if (mountedRef.current) setIsScanning(false);
+        }, 500);
       }
     }, 400);
   };
@@ -127,7 +172,7 @@ export function AgentPipeline() {
       key = await resolveFederation(recipient);
     } catch (e) {
       setIsResolving(false);
-      setError(e instanceof Error ? e.message : 'Failed to resolve recipient');
+      showError(e);
       setStep('idle');
       return;
     }
@@ -144,22 +189,37 @@ export function AgentPipeline() {
 
   const handleConnectWallet = async () => {
     const key = await connectFreighter();
-    if (key) setSenderKey(key);
-    else setError('Could not connect Freighter. Approve the connection request in the extension and try again.');
+    if (key) {
+      setSenderKey(key);
+      setError(null);
+    } else {
+      setError('Could not connect Freighter. Unlock the extension, approve the connection request, and try again.');
+    }
   };
 
   const handleSubmitTx = async () => {
     if (!senderKey || !resolvedKey) return;
+    if (isSubmitting) return; // guard against double-submit
+    // Rate limit real payments — expensive and irreversible.
+    const wait = retryAfter('submitPayment', RULES.submitPayment);
+    if (wait > 0) {
+      setError(`Please wait ${Math.ceil(wait / 1000)}s before submitting another payment.`);
+      return;
+    }
+    enforce('submitPayment', RULES.submitPayment);
+
     setError(null);
     setIsSubmitting(true);
     try {
       const result = await buildAndSubmitPayment(senderKey, resolvedKey, amount);
+      if (!mountedRef.current) return;
       setTxResult(result);
       setStep('step3');
       setIsPolling(true);
       setSettlementStatus('awaitingSettlement');
 
       const settled = await pollSettlement(result.hash, setSettlementStatus);
+      if (!mountedRef.current) return;
       // Replace optimistic values with the confirmed on-chain fee and ledger
       setTxResult(prev =>
         prev ? { ...prev, feePaid: settled.feeCharged, ledger: settled.ledger } : prev,
@@ -168,13 +228,15 @@ export function AgentPipeline() {
       setStep('done');
       triggerConfetti();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Transaction failed');
+      if (!mountedRef.current) return;
+      showError(e);
       setIsSubmitting(false);
       setIsPolling(false);
     }
   };
 
   const resetPipeline = () => {
+    if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
     setStep('idle');
     setAmount('');
     setRecipient('');
