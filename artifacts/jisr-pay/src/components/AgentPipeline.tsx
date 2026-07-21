@@ -5,6 +5,7 @@ import {
   CheckCircle, Loader2, Copy, ExternalLink, ChevronDown, Check
 } from 'lucide-react';
 import { useI18nContext } from '@/contexts/I18nContext';
+import { useToast } from '@/hooks/use-toast';
 import { 
   CORRIDORS, calculateTotal, formatSpeed, getBestCorridor, Corridor, 
   CONTRACT_ID 
@@ -19,7 +20,8 @@ type Step = 'idle' | 'step1' | 'step2' | 'step3' | 'done';
 
 export function AgentPipeline() {
   const { t, isRTL } = useI18nContext();
-  
+  const { toast } = useToast();
+
   const [step, setStep] = useState<Step>('idle');
   const [amount, setAmount] = useState<string>('');
   const [currency, setCurrency] = useState('USD');
@@ -49,12 +51,38 @@ export function AgentPipeline() {
 
   const handleCopyHash = async () => {
     if (!txResult) return;
+    let ok = false;
     try {
       await navigator.clipboard.writeText(txResult.hash);
+      ok = true;
+    } catch {
+      // Clipboard API blocked (older browser / insecure context) — fall back
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = txResult.hash;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch {
+        ok = false;
+      }
+    }
+    if (ok) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // Clipboard API unavailable (e.g. insecure context) — ignore silently
+      toast({
+        title: 'Transaction hash copied',
+        description: `${txResult.hash.slice(0, 12)}…${txResult.hash.slice(-6)}`,
+      });
+    } else {
+      toast({
+        title: 'Could not copy automatically',
+        description: 'Select the hash and copy it manually.',
+        variant: 'destructive',
+      });
     }
   };
 
