@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "pnpm install",
+  "buildCommand": "PORT=3000 BASE_PATH=/ pnpm --filter ./artifacts/jisr-pay run build",
+  "outputDirectory": "artifacts/jisr-pay/dist/public",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
