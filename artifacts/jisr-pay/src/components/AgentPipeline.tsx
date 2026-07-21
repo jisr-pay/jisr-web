@@ -47,7 +47,13 @@ export function AgentPipeline() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setWalletStatus(detectWalletEnvironment());
+    let cancelled = false;
+    detectWalletEnvironment().then(status => {
+      if (!cancelled) setWalletStatus(status);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleStart = () => {
@@ -101,6 +107,7 @@ export function AgentPipeline() {
   const handleConnectWallet = async () => {
     const key = await connectFreighter();
     if (key) setSenderKey(key);
+    else setError('Could not connect Freighter. Approve the connection request in the extension and try again.');
   };
 
   const handleSubmitTx = async () => {
