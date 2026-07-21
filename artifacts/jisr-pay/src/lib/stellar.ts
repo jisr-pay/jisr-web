@@ -10,6 +10,11 @@ import {
   rpc,
 } from '@stellar/stellar-sdk';
 import {
+  isConnected,
+  requestAccess,
+  signTransaction as freighterSignTransaction,
+} from '@stellar/freighter-api';
+import {
   CONTRACT_ID,
   FEDERATION_API_BASE,
   HORIZON_URL,
@@ -18,23 +23,31 @@ import {
   TREASURY_ADDRESS,
 } from './corridors';
 
-export function detectWalletEnvironment(): 'freighter' | 'mobile' | 'none' {
+// Detects whether the Freighter extension is available. Uses the official
+// @stellar/freighter-api, which messages the extension directly instead of
+// relying on a window global that newer Freighter builds no longer inject.
+export async function detectWalletEnvironment(): Promise<
+  'freighter' | 'mobile' | 'none'
+> {
   if (typeof window === 'undefined') return 'none';
-  // @ts-ignore
-  if (window.freighter || window.freighterApi) return 'freighter';
+  try {
+    const res = await isConnected();
+    if (res.isConnected) return 'freighter';
+  } catch {
+    // fall through to platform detection
+  }
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   if (isMobile) return 'mobile';
   return 'none';
 }
 
+// Prompts the user to grant access and returns their public key.
+// Returns null (rather than throwing) so callers can show a friendly message.
 export async function connectFreighter(): Promise<string | null> {
   try {
-    // @ts-ignore
-    const freighter = window.freighterApi || window.freighter;
-    if (!freighter) return null;
-    await freighter.setAllowed?.();
-    const publicKey = await freighter.getPublicKey();
-    return publicKey;
+    const res = await requestAccess();
+    if (res.error || !res.address) return null;
+    return res.address;
   } catch {
     return null;
   }
@@ -119,18 +132,20 @@ export async function buildAndSubmitPayment(
 
   const prepared = await server.prepareTransaction(transaction);
 
-  // @ts-ignore
-  const freighter = window.freighterApi || window.freighter;
-  if (!freighter) {
-    throw new Error('Freighter wallet not found');
-  }
-  const signResult = await freighter.signTransaction(prepared.toXDR(), {
+  const signResult = await freighterSignTransaction(prepared.toXDR(), {
     networkPassphrase: Networks.TESTNET,
+    address: senderKey,
   });
-  const signedXDR =
-    typeof signResult === 'string' ? signResult : signResult.signedTxXdr;
+  if (signResult.error) {
+    throw new Error(
+      `Freighter could not sign the transaction: ${signResult.error}`,
+    );
+  }
 
-  const signedTx = TransactionBuilder.fromXDR(signedXDR, Networks.TESTNET);
+  const signedTx = TransactionBuilder.fromXDR(
+    signResult.signedTxXdr,
+    Networks.TESTNET,
+  );
 
   const start = Date.now();
   const sendResponse = await server.sendTransaction(signedTx);
