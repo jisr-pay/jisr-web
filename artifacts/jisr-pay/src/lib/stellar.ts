@@ -10,7 +10,6 @@ import {
   rpc,
 } from '@stellar/stellar-sdk';
 import {
-  isConnected,
   requestAccess,
   signTransaction as freighterSignTransaction,
 } from '@stellar/freighter-api';
@@ -23,26 +22,19 @@ import {
   TREASURY_ADDRESS,
 } from './corridors';
 
-// Detects whether the Freighter extension is available. Uses the official
-// @stellar/freighter-api, which messages the extension directly instead of
-// relying on a window global that newer Freighter builds no longer inject.
-export async function detectWalletEnvironment(): Promise<
-  'freighter' | 'mobile' | 'none'
-> {
+// On desktop we assume Freighter *may* be present and let the actual connect
+// attempt be the source of truth — a pre-check (isConnected) is unreliable and
+// silently blocks the popup. Only mobile is treated as definitively unsupported.
+export function detectWalletEnvironment(): 'freighter' | 'mobile' | 'none' {
   if (typeof window === 'undefined') return 'none';
-  try {
-    const res = await isConnected();
-    if (res.isConnected) return 'freighter';
-  } catch {
-    // fall through to platform detection
-  }
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   if (isMobile) return 'mobile';
-  return 'none';
+  return 'freighter';
 }
 
-// Prompts the user to grant access and returns their public key.
-// Returns null (rather than throwing) so callers can show a friendly message.
+// Prompts the user to grant access and returns their public key. This call is
+// what makes the Freighter popup appear, so it must run directly on the user's
+// click. Returns null (rather than throwing) so callers can show a message.
 export async function connectFreighter(): Promise<string | null> {
   try {
     const res = await requestAccess();
