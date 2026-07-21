@@ -43,12 +43,16 @@ export function AgentPipeline() {
   const [txResult, setTxResult] = useState<TransactionResult | null>(null);
   const [settlementStatus, setSettlementStatus] = useState<string>('');
 
+  // Error state — every failure in the pipeline surfaces here
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     setWalletStatus(detectWalletEnvironment());
   }, []);
 
   const handleStart = () => {
     if (!amount || !recipient || isNaN(Number(amount)) || Number(amount) <= 0) return;
+    setError(null);
     setStep('step1');
     setIsScanning(true);
     setScannedCorridors([]);
@@ -70,16 +74,24 @@ export function AgentPipeline() {
   };
 
   const handleStep1Proceed = async () => {
+    setError(null);
     setStep('step2');
     setIsResolving(true);
-    
-    // Resolve federation
-    const key = await resolveFederation(recipient);
+
+    let key: string;
+    try {
+      key = await resolveFederation(recipient);
+    } catch (e) {
+      setIsResolving(false);
+      setError(e instanceof Error ? e.message : 'Failed to resolve recipient');
+      setStep('idle');
+      return;
+    }
     setResolvedKey(key);
     setIsResolving(false);
-    
+
     setIsBuilding(true);
-    // Fake build delay
+    // Brief UI transition before showing the transaction card
     setTimeout(() => {
       setIsBuilding(false);
       setTxBuilt(true);
@@ -93,6 +105,7 @@ export function AgentPipeline() {
 
   const handleSubmitTx = async () => {
     if (!senderKey || !resolvedKey) return;
+    setError(null);
     setIsSubmitting(true);
     try {
       const result = await buildAndSubmitPayment(senderKey, resolvedKey, amount);
@@ -100,17 +113,19 @@ export function AgentPipeline() {
       setStep('step3');
       setIsPolling(true);
       setSettlementStatus('awaitingSettlement');
-      
-      const pollRes = await pollSettlement(result.hash, setSettlementStatus);
-      if (pollRes) {
-        setIsPolling(false);
-        setStep('done');
-        triggerConfetti();
-      }
+
+      const settled = await pollSettlement(result.hash, setSettlementStatus);
+      // Replace optimistic values with the confirmed on-chain fee and ledger
+      setTxResult(prev =>
+        prev ? { ...prev, feePaid: settled.feeCharged, ledger: settled.ledger } : prev,
+      );
+      setIsPolling(false);
+      setStep('done');
+      triggerConfetti();
     } catch (e) {
-      console.error(e);
-      // Handle error gracefully
+      setError(e instanceof Error ? e.message : 'Transaction failed');
       setIsSubmitting(false);
+      setIsPolling(false);
     }
   };
 
@@ -150,7 +165,28 @@ export function AgentPipeline() {
   return (
     <div className="w-full max-w-4xl mx-auto py-12 px-4 relative z-20 -mt-24">
       <div className="flex flex-col gap-6">
-        
+
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="bg-destructive/10 border border-destructive/40 text-destructive rounded-xl p-4 flex items-start gap-3"
+              role="alert"
+            >
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+              <div className="flex-1 text-sm break-words">{error}</div>
+              <button
+                onClick={() => setError(null)}
+                className="text-destructive/70 hover:text-destructive transition-colors text-sm font-medium"
+              >
+                Dismiss
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Send Form (Always visible or transitions out?) The prompt says "Send form (shown in idle state)", implying it might stay or collapse, but let's keep it as the top header once active. */}
         <motion.div 
           layout
@@ -209,7 +245,7 @@ export function AgentPipeline() {
               </button>
             ) : (
               <button 
-                onClick={() => { setStep('idle'); setAmount(''); setRecipient(''); setTxResult(null); }}
+                onClick={() => { setStep('idle'); setAmount(''); setRecipient(''); setTxResult(null); setError(null); setResolvedKey(null); setTxBuilt(false); setIsSubmitting(false); setIsPolling(false); }}
                 className="w-full md:w-auto bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium py-3 px-6 rounded-lg transition-all"
               >
                 Reset
