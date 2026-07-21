@@ -47,13 +47,7 @@ export function AgentPipeline() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    detectWalletEnvironment().then(status => {
-      if (!cancelled) setWalletStatus(status);
-    });
-    return () => {
-      cancelled = true;
-    };
+    setWalletStatus(detectWalletEnvironment());
   }, []);
 
   const handleStart = () => {
