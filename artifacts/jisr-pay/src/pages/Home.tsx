@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useI18nContext } from '@/contexts/I18nContext';
 import { HeroScene } from '@/components/HeroScene';
 import { AgentPipeline } from '@/components/AgentPipeline';
+import { HowItWorks } from '@/components/HowItWorks';
 import { Wallet, Globe } from 'lucide-react';
 import { connectFreighter } from '@/lib/stellar';
 import { CONTRACT_ID } from '@/lib/corridors';
@@ -71,8 +72,13 @@ export default function Home() {
         </section>
 
         {/* Agent Pipeline Section */}
-        <section className="w-full px-4 pb-24 relative z-20">
+        <section className="w-full px-4 pb-8 relative z-20">
           <AgentPipeline />
+        </section>
+
+        {/* How It Works Section */}
+        <section id="how-it-works" className="w-full relative z-20 border-t border-border/50">
+          <HowItWorks />
         </section>
       </main>
 

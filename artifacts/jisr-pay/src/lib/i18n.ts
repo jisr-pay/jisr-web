@@ -68,6 +68,24 @@ export const strings = {
     contractAddress: 'Contract',
     fees: 'fees',
     faster: 'faster',
+    // Payment complete actions
+    sendAnother: 'Send Another Payment',
+    viewHistory: 'View Your History',
+    // How it works
+    hiwTitle: 'How It Works',
+    hiwSubtitle: 'Three AI agents turn a cross-border payment into a five-second, on-chain settlement.',
+    hiwStep1Title: 'Rate-Scout',
+    hiwStep1Body: 'Scans every corridor — bank wire, cash pickup, mobile money and Stellar — and finds the cheapest, fastest route in real time.',
+    hiwStep2Title: 'Router',
+    hiwStep2Body: 'Resolves the recipient (a Stellar address or a *jisr.pay federation name) and builds a Soroban smart-contract transaction on the deployed payment router.',
+    hiwStep3Title: 'Reconciler',
+    hiwStep3Body: 'Submits to Stellar, polls the network, and confirms real on-chain settlement — returning a transaction hash you can verify yourself.',
+    statFeeLabel: 'network fee',
+    statSpeedLabel: 'to settle',
+    statVerifyValue: 'On-chain',
+    statVerifyLabel: 'and verifiable',
+    whyTitle: 'Why Stellar?',
+    whyBody: 'Every payment settles on the public Stellar network in seconds for a fraction of a cent — no correspondent banks, no multi-day delays. Jisr Pay uses a live, deployed Soroban contract, so every settlement is real and independently verifiable on the block explorer.',
   },
   ar: {
     // Nav
@@ -134,6 +152,24 @@ export const strings = {
     contractAddress: 'العقد',
     fees: 'رسوم',
     faster: 'أسرع',
+    // Payment complete actions
+    sendAnother: 'إرسال دفعة أخرى',
+    viewHistory: 'عرض سجلك',
+    // How it works
+    hiwTitle: 'كيف يعمل',
+    hiwSubtitle: 'ثلاثة وكلاء بالذكاء الاصطناعي يحوّلون التحويل عبر الحدود إلى تسوية على البلوكتشين خلال خمس ثوانٍ.',
+    hiwStep1Title: 'استطلاع الأسعار',
+    hiwStep1Body: 'يمسح كل ممر — تحويل بنكي، استلام نقدي، موبايل موني وستيلار — ويجد أرخص وأسرع طريق في الوقت الفعلي.',
+    hiwStep2Title: 'الموجّه',
+    hiwStep2Body: 'يحدد المستلم (عنوان ستيلار أو اسم اتحاد ‎*jisr.pay‎) ويبني معاملة عقد ذكي على موجّه الدفع المنشور عبر سوروبان.',
+    hiwStep3Title: 'المطابق',
+    hiwStep3Body: 'يرسل إلى ستيلار، يراقب الشبكة، ويؤكد التسوية الفعلية على البلوكتشين — مع إرجاع رمز معاملة يمكنك التحقق منه بنفسك.',
+    statFeeLabel: 'رسوم الشبكة',
+    statSpeedLabel: 'للتسوية',
+    statVerifyValue: 'على البلوكتشين',
+    statVerifyLabel: 'وقابل للتحقق',
+    whyTitle: 'لماذا ستيلار؟',
+    whyBody: 'كل دفعة تتم تسويتها على شبكة ستيلار العامة خلال ثوانٍ وبجزء بسيط من السنت — بدون بنوك مراسلة، وبدون تأخير لأيام. يستخدم جسر باي عقد سوروبان منشوراً وحياً، لذا كل تسوية حقيقية وقابلة للتحقق بشكل مستقل على مستكشف البلوكتشين.',
   },
 } as const;
 
