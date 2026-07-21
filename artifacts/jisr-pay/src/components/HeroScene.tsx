@@ -1,7 +1,23 @@
-import { useRef, useState, useEffect, Suspense, CSSProperties, MouseEvent } from 'react';
+import { useRef, useState, useEffect, Suspense, Component, ReactNode, CSSProperties, MouseEvent } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Environment, Float } from '@react-three/drei';
+import { Environment, Lightformer, Float } from '@react-three/drei';
 import * as THREE from 'three';
+
+// Catches any error thrown while rendering the 3D scene (e.g. a WebGL context
+// failure) so it degrades to the gradient fallback instead of blanking the
+// entire page. Suspense does NOT catch render errors — this does.
+class SceneErrorBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children;
+  }
+}
 
 function BridgeArc() {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -46,7 +62,7 @@ export function HeroScene() {
       }
     };
     setHasWebGL(checkWebGL());
-    
+
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setReducedMotion(mediaQuery.matches);
   }, []);
@@ -56,7 +72,7 @@ export function HeroScene() {
     const rect = containerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
+
     // Update CSS variables for the reveal mask
     containerRef.current.style.setProperty('--reveal-x', `${x}px`);
     containerRef.current.style.setProperty('--reveal-y', `${y}px`);
@@ -64,8 +80,12 @@ export function HeroScene() {
 
   const useFallback = !hasWebGL || reducedMotion;
 
+  const gradientFallback = (
+    <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#0a0a0f] via-[#111118] to-[#2e1065] opacity-80" />
+  );
+
   return (
-    <div 
+    <div
       ref={containerRef}
       className="relative w-full h-[60vh] md:h-[80vh] overflow-hidden bg-background group"
       onMouseMove={handleMouseMove}
@@ -76,17 +96,40 @@ export function HeroScene() {
       {!useFallback ? (
         <>
           <div className="absolute inset-0 z-0">
-            <Suspense fallback={null}>
-              <Canvas camera={{ position: [0, 2, 8], fov: 45 }}>
-                <ambientLight intensity={0.5} />
-                <pointLight position={[0, 5, 0]} intensity={2} color="#7c3aed" />
-                <directionalLight position={[5, 5, 5]} intensity={1.5} color="#ffffff" />
-                <BridgeArc />
-                <Environment preset="city" background={false} />
-              </Canvas>
-            </Suspense>
+            <SceneErrorBoundary fallback={gradientFallback}>
+              <Suspense fallback={null}>
+                <Canvas camera={{ position: [0, 2, 8], fov: 45 }}>
+                  <ambientLight intensity={0.5} />
+                  <pointLight position={[0, 5, 0]} intensity={2} color="#7c3aed" />
+                  <directionalLight position={[5, 5, 5]} intensity={1.5} color="#ffffff" />
+                  <BridgeArc />
+                  {/* Procedural environment — no external HDR fetch, so a
+                      network failure can never crash the scene. */}
+                  <Environment resolution={256} background={false}>
+                    <Lightformer
+                      intensity={2}
+                      position={[0, 4, -6]}
+                      scale={[12, 12, 1]}
+                      color="#7c3aed"
+                    />
+                    <Lightformer
+                      intensity={1.6}
+                      position={[6, 1, 4]}
+                      scale={[10, 10, 1]}
+                      color="#ffffff"
+                    />
+                    <Lightformer
+                      intensity={1}
+                      position={[-6, 0, 4]}
+                      scale={[10, 10, 1]}
+                      color="#f59e0b"
+                    />
+                  </Environment>
+                </Canvas>
+              </Suspense>
+            </SceneErrorBoundary>
           </div>
-          <div 
+          <div
             className="hero-overlay absolute inset-0 z-10 transition-opacity duration-500 ease-out"
             style={{
               background: `radial-gradient(circle 250px at var(--reveal-x) var(--reveal-y), transparent 0%, rgba(10,10,15,0.95) 100%)`,
@@ -96,7 +139,7 @@ export function HeroScene() {
           />
         </>
       ) : (
-        <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#0a0a0f] via-[#111118] to-[#2e1065] opacity-80" />
+        gradientFallback
       )}
     </div>
   );
