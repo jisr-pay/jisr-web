@@ -45,6 +45,18 @@ export function AgentPipeline() {
 
   // Error state — every failure in the pipeline surfaces here
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyHash = async () => {
+    if (!txResult) return;
+    try {
+      await navigator.clipboard.writeText(txResult.hash);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard API unavailable (e.g. insecure context) — ignore silently
+    }
+  };
 
   useEffect(() => {
     setWalletStatus(detectWalletEnvironment());
@@ -465,8 +477,8 @@ export function AgentPipeline() {
                             <span className="text-sm text-muted-foreground">{t('txHash')}</span>
                             <div className="flex items-center gap-2">
                               <span className="font-mono text-foreground bg-black/40 px-2 py-1 rounded border border-white/5">{txResult.hash.slice(0, 16)}...</span>
-                              <button className="text-muted-foreground hover:text-foreground transition-colors p-1" title="Copy">
-                                <Copy className="w-4 h-4" />
+                              <button onClick={handleCopyHash} className="text-muted-foreground hover:text-foreground transition-colors p-1" title={copied ? 'Copied!' : 'Copy full hash'}>
+                                {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                               </button>
                               <a href={`https://stellar.expert/explorer/testnet/tx/${txResult.hash}`} target="_blank" rel="noreferrer" className="text-primary hover:text-primary/80 transition-colors p-1" title={t('viewOnStellar')}>
                                 <ExternalLink className="w-4 h-4" />
