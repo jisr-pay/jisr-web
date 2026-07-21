@@ -57,15 +57,18 @@ export function AgentPipeline() {
     setIsScanning(true);
     setScannedCorridors([]);
     
-    // Simulate scanning corridors
+    // Reveal corridors one at a time. Capture the corridor into a local const
+    // BEFORE calling setState: the functional updater runs when React flushes
+    // it (after index++ has already executed), so reading index inside it would
+    // read a stale, out-of-range value and push undefined.
     let index = 0;
     const interval = setInterval(() => {
       if (index < CORRIDORS.length) {
-        setScannedCorridors(prev => {
-          const updated = [...prev, CORRIDORS[index]];
-          return updated.sort((a, b) => a.feePercent - b.feePercent);
-        });
+        const corridor = CORRIDORS[index];
         index++;
+        setScannedCorridors(prev =>
+          [...prev, corridor].sort((a, b) => a.feePercent - b.feePercent),
+        );
       } else {
         clearInterval(interval);
         setTimeout(() => setIsScanning(false), 500);
