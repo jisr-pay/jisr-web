@@ -3,7 +3,7 @@ import { useI18nContext } from '@/contexts/I18nContext';
 import { HeroScene } from '@/components/HeroScene';
 import { AgentPipeline } from '@/components/AgentPipeline';
 import { Wallet, Globe } from 'lucide-react';
-import { connectFreighter, detectWalletEnvironment } from '@/lib/stellar';
+import { connectFreighter } from '@/lib/stellar';
 import { CONTRACT_ID } from '@/lib/corridors';
 
 export default function Home() {
@@ -11,13 +11,10 @@ export default function Home() {
   const [walletKey, setWalletKey] = useState<string | null>(null);
 
   const handleConnect = async () => {
-    if ((await detectWalletEnvironment()) === 'freighter') {
-      const key = await connectFreighter();
-      if (key) setWalletKey(key);
-      else alert(t('installFreighter'));
-    } else {
-      alert(t('installFreighter'));
-    }
+    // Call connect directly — this is what makes the Freighter popup appear.
+    const key = await connectFreighter();
+    if (key) setWalletKey(key);
+    else alert(t('installFreighter'));
   };
 
   return (
