@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowRight, Search, Activity, Link as LinkIcon, AlertCircle, 
-  CheckCircle, Loader2, Copy, ExternalLink, ChevronDown, Check
+  ArrowRight, Search, Activity, Link as LinkIcon, AlertCircle,
+  CheckCircle, Loader2, Copy, ExternalLink, ChevronDown, Check,
+  RefreshCw, History
 } from 'lucide-react';
 import { useI18nContext } from '@/contexts/I18nContext';
 import { useToast } from '@/hooks/use-toast';
@@ -173,6 +174,22 @@ export function AgentPipeline() {
     }
   };
 
+  const resetPipeline = () => {
+    setStep('idle');
+    setAmount('');
+    setRecipient('');
+    setTxResult(null);
+    setError(null);
+    setResolvedKey(null);
+    setTxBuilt(false);
+    setIsSubmitting(false);
+    setIsPolling(false);
+    setScannedCorridors([]);
+    setIsScanning(false);
+    // Keep senderKey so the user stays "connected" for the next payment.
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const triggerConfetti = () => {
     const duration = 3 * 1000;
     const end = Date.now() + duration;
@@ -289,7 +306,7 @@ export function AgentPipeline() {
               </button>
             ) : (
               <button 
-                onClick={() => { setStep('idle'); setAmount(''); setRecipient(''); setTxResult(null); setError(null); setResolvedKey(null); setTxBuilt(false); setIsSubmitting(false); setIsPolling(false); }}
+                onClick={resetPipeline}
                 className="w-full md:w-auto bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium py-3 px-6 rounded-lg transition-all"
               >
                 Reset
@@ -528,6 +545,27 @@ export function AgentPipeline() {
                             <span className="text-sm text-muted-foreground">{t('savings')}</span>
                             <span className="font-bold text-lg text-amber-500">${savingsAmount.toFixed(2)} vs Bank Wire</span>
                           </div>
+                        </div>
+
+                        <div className="mt-6 pt-5 border-t border-white/10 flex flex-col sm:flex-row gap-3 relative z-10">
+                          <button
+                            onClick={resetPipeline}
+                            className="flex-1 inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-lg transition-all"
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                            {t('sendAnother')}
+                          </button>
+                          {senderKey && (
+                            <a
+                              href={`https://stellar.expert/explorer/testnet/account/${senderKey}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex-1 inline-flex items-center justify-center gap-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium py-3 px-6 rounded-lg transition-all"
+                            >
+                              <History className="w-4 h-4" />
+                              {t('viewHistory')}
+                            </a>
+                          )}
                         </div>
                       </motion.div>
                     )}
