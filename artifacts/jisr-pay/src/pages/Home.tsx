@@ -11,9 +11,10 @@ export default function Home() {
   const [walletKey, setWalletKey] = useState<string | null>(null);
 
   const handleConnect = async () => {
-    if (detectWalletEnvironment() === 'freighter') {
+    if ((await detectWalletEnvironment()) === 'freighter') {
       const key = await connectFreighter();
       if (key) setWalletKey(key);
+      else alert(t('installFreighter'));
     } else {
       alert(t('installFreighter'));
     }
