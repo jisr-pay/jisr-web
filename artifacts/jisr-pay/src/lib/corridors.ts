@@ -64,7 +64,12 @@ export function getBestCorridor(corridors: Corridor[]): Corridor {
   );
 }
 
-export const CONTRACT_ID = 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA3AQ';
+// Deployed stellar-tags payment_router infrastructure (Stellar testnet)
+export const CONTRACT_ID = 'CDNQ7OMHIFOLZHOKWQLOGDW7CF3DRMKXJC6OULNGNBWF4O4NO2NEIGER';
+export const TREASURY_ADDRESS = 'GAAFWEZKDYPXLTQGKQ3F23TXWYQUDAYTDW7P7VUQSVJFW2GWC4Y6LWST';
+export const TOKEN_ADDRESS = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC';
+export const FEDERATION_API_BASE = 'https://stellar-tags-production.up.railway.app';
+export const SOROBAN_RPC_URL = 'https://soroban-testnet.stellar.org';
 export const STELLAR_NETWORK = 'TESTNET';
 export const HORIZON_URL = 'https://horizon-testnet.stellar.org';
 export const NETWORK_PASSPHRASE = 'Test SDF Network ; September 2015';
