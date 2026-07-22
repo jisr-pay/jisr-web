@@ -24,6 +24,7 @@ jisr-pay/
 ├── docs/               # Documentation & Edge cases
 ├── SUBMISSION.md       # Complete hackathon pitch & architecture document
 ├── DEMO_SCRIPT.md      # 2-minute video presentation script
+├── MARKETING_STRATEGY.md # ⭐ Global Go-To-Market & Growth Strategy Blueprint
 ├── pnpm-workspace.yaml # Workspace config + allowBuilds script security settings
 ├── tsconfig.base.json  # Shared TS config
 └── vercel.json         # Deployment config + strict Content Security Policy headers
