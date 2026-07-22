@@ -1,6 +1,6 @@
 import { useI18nContext } from '@/contexts/I18nContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { ScrollHeroSection } from '@/components/ScrollHeroSection';
+import { StoryLandingSection } from '@/components/StoryLandingSection';
 import { HeroScene } from '@/components/HeroScene';
 import { HowItWorks } from '@/components/HowItWorks';
 import { Globe, ArrowRight, Zap, Shield, Globe2 } from 'lucide-react';
@@ -79,36 +79,8 @@ export default function Landing() {
 
       <main className="flex-1 flex flex-col w-full">
 
-        {/* ── Scroll-Scrubbed 3D Particle Hero ── */}
-        <ScrollHeroSection scrollHeightVh={300}>
-          <div className="flex flex-col items-center justify-center text-center px-4 pointer-events-none pb-12 max-w-4xl mx-auto">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-5xl md:text-7xl font-extrabold tracking-tight text-foreground mb-6 drop-shadow-2xl"
-            >
-              {t('heroTitle')}
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.15 }}
-              className="text-lg md:text-xl text-muted-foreground max-w-2xl font-medium leading-relaxed drop-shadow-md mb-8"
-            >
-              {t('heroSubtitle')}
-            </motion.p>
-            <motion.button
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, delay: 0.3 }}
-              onClick={() => navigate('/app')}
-              className="pointer-events-auto flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg px-8 py-4 rounded-full shadow-[0_0_30px_rgba(124,58,237,0.5)] transition-all hover:scale-105"
-            >
-              {t('heroCTA')} <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
-            </motion.button>
-          </div>
-        </ScrollHeroSection>
+        {/* ── 6-Beat 3D Fly-Through Story Runway ── */}
+        <StoryLandingSection scrollHeightVh={600} />
 
         {/* ── Features Strip ── */}
         <section id="features" className="w-full py-20 px-6 bg-muted/40 border-y border-border/50">
