@@ -8,6 +8,13 @@ export const strings = {
     appName: 'Jisr Pay',
     connectWallet: 'Connect Wallet',
     walletConnected: 'Wallet Connected',
+    // Landing nav
+    navFeatures: 'Features',
+    navHowItWorks: 'How It Works',
+    navCorridors: 'Corridors',
+    launchApp: 'Launch App',
+    // Receipt
+    downloadReceipt: 'Download Receipt',
     // Hero
     heroTitle: 'Bridge Money Across Borders',
     heroSubtitle: 'Gulf ↔ Africa remittances at Stellar speed — AI-routed, blockchain-settled, fraction of the cost',
@@ -92,6 +99,13 @@ export const strings = {
     appName: 'جسر باي',
     connectWallet: 'ربط المحفظة',
     walletConnected: 'المحفظة متصلة',
+    // Landing nav
+    navFeatures: 'المميزات',
+    navHowItWorks: 'كيف يعمل',
+    navCorridors: 'الممرات',
+    launchApp: 'تشغيل التطبيق',
+    // Receipt
+    downloadReceipt: 'تنزيل الإيصال',
     // Hero
     heroTitle: 'جسر الأموال عبر الحدود',
     heroSubtitle: 'تحويلات الخليج ↔ أفريقيا بسرعة ستيلار — توجيه بالذكاء الاصطناعي، تسوية على البلوكتشين، بجزء من التكلفة',

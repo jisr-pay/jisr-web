@@ -4,6 +4,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
 import Home from '@/pages/Home';
+import Landing from '@/pages/Landing';
 import { I18nProvider } from '@/contexts/I18nContext';
 import { RootErrorBoundary } from '@/components/RootErrorBoundary';
 import { createLogger } from '@/lib/logger';
@@ -15,7 +16,8 @@ const log = createLogger('app');
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/" component={Landing} />
+      <Route path="/app" component={Home} />
       <Route component={NotFound} />
     </Switch>
   );

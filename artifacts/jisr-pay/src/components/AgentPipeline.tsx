@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowRight, Search, Activity, Link as LinkIcon, AlertCircle,
+  ArrowRight, Activity, AlertCircle,
   CheckCircle, Loader2, Copy, ExternalLink, ChevronDown, Check,
-  RefreshCw, History
+  RefreshCw, History, Download
 } from 'lucide-react';
 import { useI18nContext } from '@/contexts/I18nContext';
 import { useToast } from '@/hooks/use-toast';
@@ -24,7 +24,14 @@ import confetti from 'canvas-confetti';
 
 type Step = 'idle' | 'step1' | 'step2' | 'step3' | 'done';
 
-export function AgentPipeline() {
+interface AgentPipelineProps {
+  /** Public key already connected by the parent (dashboard). Optional — pipeline can also connect internally. */
+  walletKey?: string | null;
+  /** Called when the pipeline internally connects Freighter, so the parent can sync its display. */
+  onWalletChange?: (key: string | null) => void;
+}
+
+export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: AgentPipelineProps = {}) {
   const { t, isRTL } = useI18nContext();
   const { toast } = useToast();
 
@@ -43,7 +50,13 @@ export function AgentPipeline() {
   const [isBuilding, setIsBuilding] = useState(false);
   const [txBuilt, setTxBuilt] = useState(false);
   const [walletStatus, setWalletStatus] = useState<'freighter' | 'mobile' | 'none'>('none');
-  const [senderKey, setSenderKey] = useState<string | null>(null);
+  // Use external wallet key from dashboard if provided, fall back to internal state.
+  const [internalSenderKey, setInternalSenderKey] = useState<string | null>(null);
+  const senderKey = externalWalletKey ?? internalSenderKey;
+  const setSenderKey = (key: string | null) => {
+    setInternalSenderKey(key);
+    onWalletChange?.(key);
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Step 3 state
@@ -109,6 +122,48 @@ export function AgentPipeline() {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleDownloadReceipt = () => {
+    if (!txResult) return;
+    const now = new Date();
+    const lines = [
+      '============================================================',
+      '                  JISR PAY — TRANSACTION RECEIPT',
+      '============================================================',
+      '',
+      `Date / Time   : ${now.toUTCString()}`,
+      `Amount Sent   : ${amount} ${currency}`,
+      `Recipient     : ${resolvedKey ?? recipient}`,
+      '',
+      '------------------------------------------------------------',
+      '  PAYMENT DETAILS',
+      '------------------------------------------------------------',
+      `Transaction Hash : ${txResult.hash}`,
+      `Fee Paid         : ${txResult.feePaid}`,
+      `Settlement Time  : ${(txResult.settlementTimeMs / 1000).toFixed(2)}s`,
+      `Savings vs Wire  : $${savingsAmount.toFixed(2)} (${savingsPercent.toFixed(0)}%)`,
+      '',
+      '------------------------------------------------------------',
+      '  VERIFY ON STELLAR',
+      '------------------------------------------------------------',
+      `https://stellar.expert/explorer/testnet/tx/${txResult.hash}`,
+      '',
+      '============================================================',
+      '  Jisr Pay — Gulf ↔ Africa remittances at Stellar speed',
+      '  Network: Stellar Testnet  |  Contract: ' + CONTRACT_ID.slice(0, 10) + '...' + CONTRACT_ID.slice(-6),
+      '============================================================',
+    ].join('\n');
+
+    const blob = new Blob([lines], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `jisr-pay-receipt-${txResult.hash.slice(0, 8)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toast({ title: 'Receipt downloaded', description: `jisr-pay-receipt-${txResult.hash.slice(0, 8)}.txt` });
   };
 
   useEffect(() => {
@@ -286,7 +341,7 @@ export function AgentPipeline() {
   const savingsPercent = worstCorridor ? (savingsAmount / calculateTotal(worstCorridor, numAmount)) * 100 : 0;
 
   return (
-    <div className="w-full max-w-4xl mx-auto py-12 px-4 relative z-20 -mt-24">
+    <div className="w-full max-w-4xl mx-auto py-8 px-4 relative z-20">
       <div className="flex flex-col gap-6">
 
         <AnimatePresence>
@@ -616,6 +671,13 @@ export function AgentPipeline() {
                           >
                             <RefreshCw className="w-4 h-4" />
                             {t('sendAnother')}
+                          </button>
+                          <button
+                            onClick={handleDownloadReceipt}
+                            className="flex-1 inline-flex items-center justify-center gap-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-medium py-3 px-6 rounded-lg transition-all"
+                          >
+                            <Download className="w-4 h-4" />
+                            {t('downloadReceipt')}
                           </button>
                           {senderKey && (
                             <a
