@@ -1,5 +1,6 @@
 import { useI18nContext } from '@/contexts/I18nContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { ScrollHeroSection } from '@/components/ScrollHeroSection';
 import { HeroScene } from '@/components/HeroScene';
 import { HowItWorks } from '@/components/HowItWorks';
 import { Globe, ArrowRight, Zap, Shield, Globe2 } from 'lucide-react';
@@ -78,15 +79,14 @@ export default function Landing() {
 
       <main className="flex-1 flex flex-col w-full">
 
-        {/* ── Hero ── */}
-        <section className="w-full relative">
-          <HeroScene />
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 pointer-events-none pb-24">
+        {/* ── Scroll-Scrubbed 3D Particle Hero ── */}
+        <ScrollHeroSection scrollHeightVh={300}>
+          <div className="flex flex-col items-center justify-center text-center px-4 pointer-events-none pb-12 max-w-4xl mx-auto">
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="text-5xl md:text-7xl font-extrabold tracking-tight max-w-4xl text-foreground mb-6 drop-shadow-2xl"
+              className="text-5xl md:text-7xl font-extrabold tracking-tight text-foreground mb-6 drop-shadow-2xl"
             >
               {t('heroTitle')}
             </motion.h1>
@@ -108,7 +108,7 @@ export default function Landing() {
               {t('heroCTA')} <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
             </motion.button>
           </div>
-        </section>
+        </ScrollHeroSection>
 
         {/* ── Features Strip ── */}
         <section id="features" className="w-full py-20 px-6 bg-muted/40 border-y border-border/50">
