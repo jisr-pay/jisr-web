@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X, Send, Bot, User, ArrowRight, Zap, RefreshCw } from 'lucide-react';
+import { Sparkles, X, Send, Bot, User, GripHorizontal } from 'lucide-react';
 import { useI18nContext } from '@/contexts/I18nContext';
 import { CORRIDORS, calculateTotal } from '@/lib/corridors';
 
@@ -104,7 +104,12 @@ export function JisrCopilot() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 font-sans" dir={isRTL ? 'rtl' : 'ltr'}>
+    <motion.div
+      drag
+      dragMomentum={false}
+      className="fixed bottom-6 right-6 z-50 font-sans cursor-grab active:cursor-grabbing"
+      dir={isRTL ? 'rtl' : 'ltr'}
+    >
       {/* Floating Copilot Launcher Button */}
       <AnimatePresence>
         {!isOpen && (
@@ -112,17 +117,17 @@ export function JisrCopilot() {
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
             onClick={() => setIsOpen(true)}
-            className="relative flex items-center gap-3 bg-gradient-to-r from-primary via-[#00D6FF] to-primary text-white font-bold px-5 py-3.5 rounded-full shadow-[0_0_25px_rgba(124,58,237,0.5)] border border-white/20 group overflow-hidden"
+            className="relative flex items-center gap-3 bg-card border border-border hover:border-primary/50 text-foreground font-bold px-4 py-3 rounded-full shadow-2xl backdrop-blur-xl transition-all group overflow-hidden"
           >
-            <span className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="relative w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+            <GripHorizontal className="w-4 h-4 text-muted-foreground/50 group-hover:text-primary transition-colors" />
+            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+              <Sparkles className="w-4 h-4 text-primary animate-pulse" />
             </div>
             <span className="text-sm font-extrabold tracking-tight">Jisr Copilot</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -135,27 +140,26 @@ export function JisrCopilot() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.25 }}
-            className="w-80 md:w-96 h-[500px] rounded-3xl border border-primary/40 bg-card/95 backdrop-blur-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden"
+            className="w-80 md:w-96 h-[500px] rounded-3xl border border-border bg-card/95 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden"
           >
-            {/* Modal Header */}
-            <div className="p-4 border-b border-border/60 bg-muted/40 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-[#00D6FF] p-0.5 shadow-md">
-                  <div className="w-full h-full bg-card rounded-[10px] flex items-center justify-center">
-                    <Bot className="w-5 h-5 text-primary" />
-                  </div>
+            {/* Drag Handle & Header */}
+            <div className="p-4 border-b border-border bg-muted/40 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <GripHorizontal className="w-4 h-4 text-muted-foreground/60" />
+                <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <Bot className="w-4 h-4 text-primary" />
                 </div>
                 <div>
                   <h3 className="text-sm font-extrabold text-foreground flex items-center gap-1.5">
-                    Jisr Copilot <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">AI</span>
+                    Jisr Copilot <span className="text-[10px] font-mono text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-bold">AI</span>
                   </h3>
-                  <p className="text-[11px] text-muted-foreground">Remittance Intelligence Engine</p>
+                  <p className="text-[11px] text-muted-foreground">Remittance Intelligence</p>
                 </div>
               </div>
 
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-8 h-8 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                className="w-8 h-8 rounded-full bg-muted hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -171,7 +175,7 @@ export function JisrCopilot() {
                   className={`flex gap-2.5 ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   {m.sender === 'ai' && (
-                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-1">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-1">
                       <Sparkles className="w-3.5 h-3.5 text-primary" />
                     </div>
                   )}
@@ -180,7 +184,7 @@ export function JisrCopilot() {
                     className={`max-w-[82%] p-3 rounded-2xl text-xs leading-relaxed whitespace-pre-line shadow-sm ${
                       m.sender === 'user'
                         ? 'bg-primary text-primary-foreground font-medium rounded-tr-none'
-                        : 'bg-muted/80 border border-border/80 text-foreground rounded-tl-none'
+                        : 'bg-muted border border-border text-foreground rounded-tl-none'
                     }`}
                   >
                     {m.text}
@@ -206,12 +210,12 @@ export function JisrCopilot() {
             </div>
 
             {/* Quick Prompts */}
-            <div className="px-3 py-2 border-t border-border/40 bg-muted/20 flex gap-2 overflow-x-auto no-scrollbar">
+            <div className="px-3 py-2 border-t border-border/60 bg-muted/20 flex gap-2 overflow-x-auto no-scrollbar">
               {PRESET_QUESTIONS.map((q) => (
                 <button
                   key={q.label}
                   onClick={() => handleSend(q.query)}
-                  className="shrink-0 text-[11px] font-semibold bg-secondary/80 hover:bg-primary/20 hover:text-primary text-muted-foreground px-3 py-1 rounded-full border border-border/60 transition-all"
+                  className="shrink-0 text-[11px] font-semibold bg-muted hover:bg-primary/20 hover:text-primary text-muted-foreground px-3 py-1 rounded-full border border-border transition-all"
                 >
                   {q.label}
                 </button>
@@ -219,14 +223,14 @@ export function JisrCopilot() {
             </div>
 
             {/* Input Footer */}
-            <div className="p-3 border-t border-border/60 bg-card flex items-center gap-2">
+            <div className="p-3 border-t border-border bg-card flex items-center gap-2">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder={lang === 'en' ? 'Ask Jisr AI...' : 'اسأل ذكاء جسر...'}
-                className="flex-1 bg-muted/60 text-xs px-3.5 py-2.5 rounded-full border border-border/60 focus:outline-none focus:border-primary text-foreground placeholder:text-muted-foreground"
+                className="flex-1 bg-muted/60 text-xs px-3.5 py-2.5 rounded-full border border-border focus:outline-none focus:border-primary text-foreground placeholder:text-muted-foreground"
               />
               <button
                 onClick={() => handleSend()}
@@ -239,6 +243,6 @@ export function JisrCopilot() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }

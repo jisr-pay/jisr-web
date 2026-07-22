@@ -30,13 +30,13 @@ function MetallicBridgeArc() {
   return (
     <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
       <mesh ref={meshRef} position={[0, -1, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[4, 0.2, 64, 128, Math.PI]} />
+        <torusGeometry args={[4, 0.2, 48, 96, Math.PI]} />
         <meshPhysicalMaterial
           color="#c0c0cc"
           metalness={0.95}
           roughness={0.1}
-          envMapIntensity={2}
-          clearcoat={1}
+          envMapIntensity={1.8}
+          clearcoat={0.8}
           clearcoatRoughness={0.1}
         />
       </mesh>
@@ -48,8 +48,13 @@ export function StoryScene({ progressRef }: StorySceneProps) {
   return (
     <Canvas
       camera={{ position: [0, 0, 10], fov: 50 }}
-      dpr={[1, 2]}
-      gl={{ antialias: true, alpha: true }}
+      dpr={[1, 1.5]}
+      gl={{
+        antialias: true,
+        alpha: true,
+        powerPreference: "high-performance",
+        precision: "mediump",
+      }}
     >
       <ambientLight intensity={0.5} />
       <pointLight position={[0, 5, 0]} intensity={2} color="#7c3aed" />
@@ -61,8 +66,8 @@ export function StoryScene({ progressRef }: StorySceneProps) {
       {/* Original Metallic 3D Bridge Ring Arc */}
       <MetallicBridgeArc />
 
-      {/* Procedural Environment Lightformers for metallic reflections */}
-      <Environment resolution={256} background={false}>
+      {/* Optimized Procedural Environment Lightformers for metallic reflections */}
+      <Environment resolution={128} background={false}>
         <Lightformer
           intensity={2}
           position={[0, 4, -6]}
