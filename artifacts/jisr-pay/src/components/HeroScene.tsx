@@ -22,9 +22,9 @@ class SceneErrorBoundary extends Component<
 function BridgeArc() {
   const meshRef = useRef<THREE.Mesh>(null);
 
-  useFrame((state) => {
+  useFrame((_, delta) => {
     if (meshRef.current) {
-      meshRef.current.rotation.y = state.clock.elapsedTime * 0.05;
+      meshRef.current.rotation.y += delta * 0.05;
     }
   });
 
