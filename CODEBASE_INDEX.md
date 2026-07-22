@@ -1,184 +1,283 @@
-# Jisr Pay — Codebase Index 🌉
+# Jisr Pay — Codebase Index
 
 > **Gulf ↔ Africa remittances at Stellar speed — AI-routed, blockchain-settled.**
-> A hackathon fintech demo featuring a 3-agent AI pipeline, Stellar blockchain settlement, branded PDF receipt generation, dual Light/Dark theme engine, and English/Arabic RTL support.
+> A hackathon fintech demo: a 3-agent AI pipeline finds the cheapest corridor and settles
+> a real payment on the Stellar testnet via a deployed Soroban contract, with a branded PDF
+> receipt, light/dark theming, and full English/Arabic RTL support.
+
+Paths below are repo-relative so they work regardless of machine or OS.
 
 ---
 
-## Monorepo Overview
+## 1. Monorepo layout
 
-This is a **pnpm workspace** monorepo. Package manager: `pnpm 11+`. Node version: `20+`.
+A **pnpm workspace** monorepo (pnpm `11.8.0`, Node 20+).
 
 ```
 jisr-pay/
-├── artifacts/          # Deployable applications
-│   ├── jisr-pay/       # React frontend (Vite + TS + Tailwind v4)
-│   ├── api-server/     # Express API server (Node + TS)
-│   └── mockup-sandbox/ # Design sandbox
-├── lib/                # Shared libraries (workspace packages)
-│   ├── api-spec/       # OpenAPI 3.1 specification
-│   ├── api-zod/        # Generated Zod types from OpenAPI
-│   ├── api-client-react/ # Generated React Query client from OpenAPI
-│   └── db/             # Drizzle ORM schema + DB config
-├── scripts/            # Monorepo utility scripts
-├── docs/               # Documentation & Edge cases
-├── SUBMISSION.md       # Complete hackathon pitch & architecture document
-├── DEMO_SCRIPT.md      # 2-minute video presentation script
-├── MARKETING_STRATEGY.md # ⭐ Global Go-To-Market & Growth Strategy Blueprint
-├── pnpm-workspace.yaml # Workspace config + allowBuilds script security settings
-├── tsconfig.base.json  # Shared TS config
-└── vercel.json         # Deployment config + strict Content Security Policy headers
+├── artifacts/               # Deployable apps (Replit "artifact" convention)
+│   ├── jisr-pay/            # ⭐ The product — React/Vite frontend (this is what ships)
+│   ├── api-server/          # Express scaffold — NOT used by the frontend, no real routes
+│   └── mockup-sandbox/      # Replit design-preview sandbox, unrelated to the shipped app
+├── lib/                     # Shared workspace packages
+│   ├── api-spec/            # OpenAPI 3.1 spec (health check only)
+│   ├── api-zod/             # Zod types generated from api-spec
+│   ├── api-client-react/    # React Query hooks generated from api-spec
+│   └── db/                  # Drizzle ORM + Postgres config — schema is EMPTY, unused
+├── scripts/                 # Workspace utility scripts (currently a placeholder)
+├── docs/
+│   └── EDGE_CASES.md        # Every failure mode in the payment flow and how it's handled
+├── attached_assets/         # Ad-hoc assets dropped in by Replit (image, kickoff prompt)
+├── CLAUDE.md                # gstack skill-suite setup instructions for AI coding sessions
+├── README.md                # Project overview (see "Known drift" — partially stale)
+├── replit.md                # Replit run/operate notes (template, mostly unfilled)
+├── SUBMISSION.md            # Hackathon submission pitch/architecture writeup
+├── DEMO_SCRIPT.md           # 2-minute demo video script
+├── MARKETING_STRATEGY.md    # Go-to-market strategy doc (not code, informational)
+├── pnpm-workspace.yaml      # Workspace + supply-chain security settings (see §6)
+├── vercel.json              # Deploy config: build command, output dir, CSP + security headers
+├── tsconfig.base.json / tsconfig.json
+└── package.json             # Root scripts: build, typecheck
 ```
 
----
-
-## Workspace Packages
+### Workspace packages
 
 | Package | Name | Path | Purpose |
 |---|---|---|---|
-| Frontend App | `@workspace/jisr-pay` | `artifacts/jisr-pay/` | React 19 + Vite 7 SPA |
-| API Server | `@workspace/api-server` | `artifacts/api-server/` | Express 5 REST API |
-| API Spec | `@workspace/api-spec` | `lib/api-spec/` | OpenAPI 3.1 YAML |
-| Zod Types | `@workspace/api-zod` | `lib/api-zod/` | Generated Zod schemas |
-| React Client | `@workspace/api-client-react` | `lib/api-client-react/` | Generated React Query hooks |
-| Database | `@workspace/db` | `lib/db/` | Drizzle ORM + PostgreSQL schema |
+| Frontend app | `@workspace/jisr-pay` | `artifacts/jisr-pay/` | The actual product — React 19 + Vite 7 SPA. **This is what's deployed to Vercel.** |
+| API server | `@workspace/api-server` | `artifacts/api-server/` | Express 5 scaffold with a `/api/healthz` route and nothing else. Not deployed, not called by the frontend. |
+| API spec | `@workspace/api-spec` | `lib/api-spec/` | OpenAPI 3.1 YAML — currently documents only the health check. |
+| Zod types | `@workspace/api-zod` | `lib/api-zod/` | Generated from the OpenAPI spec via Orval. |
+| React client | `@workspace/api-client-react` | `lib/api-client-react/` | Generated React Query hooks from the OpenAPI spec. Not imported anywhere in the frontend. |
+| Database | `@workspace/db` | `lib/db/` | Drizzle ORM + `pg` Pool wired to `DATABASE_URL`. **`src/schema/index.ts` is empty (commented-out example only) — zero tables, zero usage.** |
+
+**Bottom line:** the only thing that matters for running/understanding the product is `artifacts/jisr-pay/`. Everything else in `artifacts/` and most of `lib/` is unused Replit scaffolding.
 
 ---
 
-## Frontend App (`artifacts/jisr-pay/`)
+## 2. The product: `artifacts/jisr-pay/`
 
-**Tech Stack:** React 19, Vite 7, TypeScript, Tailwind CSS v4, Wouter (routing), `next-themes` (Light/Dark mode), TanStack Query, Framer Motion, Three.js, jsPDF.
+### Tech stack
 
-### Source Structure
+React 19 · Vite 7 · TypeScript · Tailwind CSS v4 · `wouter` (routing) · `next-themes` (light/dark) ·
+TanStack Query · Framer Motion · `@react-three/fiber` + `@react-three/drei` + `three.js` (3D) ·
+`@stellar/stellar-sdk` + `@stellar/freighter-api` (wallet + chain) · `jspdf` (receipts) ·
+`canvas-confetti`.
+
+### Source tree
 
 ```
 artifacts/jisr-pay/src/
-├── App.tsx               # Root component — ThemeProvider + Router + QueryClient + ErrorBoundary
-├── main.tsx              # Vite entry point
-├── index.css             # Semantic HSL design system (Light & Dark theme variables)
+├── App.tsx                    # Root: RootErrorBoundary > ThemeProvider > QueryClientProvider
+│                               #   > I18nProvider > TooltipProvider > Router. Renders <JisrCopilot/>
+│                               #   globally (visible on every route) and global window
+│                               #   error/unhandledrejection logging.
+├── main.tsx                   # Vite entry point
+├── index.css                  # Semantic HSL design tokens for light + dark themes; fonts
+│
 ├── pages/
-│   ├── Landing.tsx       # ⭐ Public Landing Page route (/) — Nav + 3D Hero + Features + Corridors + Footer
-│   ├── Home.tsx          # ⭐ App Dashboard route (/app) — Wallet Connect + AgentPipeline
-│   └── not-found.tsx     # 404 Error page
+│   ├── Landing.tsx             # Route "/" — marketing page: sticky nav, story-driven 3D
+│   │                            #   scrollytelling hero, HowItWorks, corridor highlights, footer.
+│   │                            #   No wallet connect, no payment form.
+│   ├── Home.tsx                 # Route "/app" — THE DASHBOARD. Wallet-connect nav + AgentPipeline.
+│   │                            #   This is where a real payment is actually made.
+│   └── not-found.tsx           # 404
+│
 ├── components/
-│   ├── AgentPipeline.tsx # ⭐ Core 3-Agent pipeline UX + live route comparison + PDF download (34KB)
-│   ├── JisrCopilot.tsx   # ⭐ Floating AI Assistant widget with interactive remittance intelligence
-│   ├── HeroScene.tsx     # Three.js 3D metallic torus-arc hero animation with cursor radial mask
-│   ├── HowItWorks.tsx    # Animated 3-step breakdown of AI Agents
-│   ├── ThemeToggle.tsx   # Sun/Moon light/dark mode switcher component
-│   ├── RootErrorBoundary.tsx # Global React error boundary
-│   └── ui/               # Radix UI & shadcn/ui primitives
+│   ├── AgentPipeline.tsx       # ⭐ THE core feature (730 lines). State machine: idle → step1
+│   │                            #   (Rate-Scout scans corridors) → step2 (Router resolves
+│   │                            #   federation + builds Soroban tx, Connect Wallet + Sign&Submit)
+│   │                            #   → step3 (Reconciler polls Horizon) → done. Renders the
+│   │                            #   corridor table, error banner, Payment Complete card with
+│   │                            #   copy-hash / download-receipt / send-another / view-history
+│   │                            #   actions. Client-side rate limiting + double-submit guards live
+│   │                            #   here (via lib/rateLimit.ts).
+│   ├── JisrCopilot.tsx         # Floating AI-assistant chat widget (draggable, theme-adaptive).
+│   │                            #   Canned Q&A about savings/agents/corridors/Stellar — NOT a real
+│   │                            #   LLM call, just local preset responses. Mounted globally in App.tsx.
+│   ├── HeroScene.tsx           # react-three-fiber metallic torus-arc scene (procedural Lightformer
+│   │                            #   lighting, no external HDR fetch) wrapped in an error boundary
+│   │                            #   that falls back to a CSS gradient if WebGL/3D fails.
+│   ├── ScrollHeroSection.tsx, StoryLandingSection.tsx, StoryScene.tsx, StoryBeats.tsx,
+│   │   CameraRig.tsx, BridgeParticles.tsx, storyWaypoints.ts
+│   │                            # A six-beat scroll-driven 3D camera fly-through used on the
+│   │                            #   Landing page (bridge-open → pain-points → agent-pipeline →
+│   │                            #   corridor-table → settlement → cta-rise). storyWaypoints.ts
+│   │                            #   defines camera position/lookAt per scroll-progress waypoint;
+│   │                            #   useScrollProgress (hooks/) drives it from scroll position.
+│   ├── HowItWorks.tsx          # Static 3-step explainer (Rate-Scout/Router/Reconciler) + stats
+│   │                            #   strip + "Why Stellar" panel. Bilingual.
+│   ├── ThemeToggle.tsx         # Sun/moon light/dark switcher (next-themes)
+│   ├── RootErrorBoundary.tsx   # App-wide error boundary — shows a "Reload" screen instead of a
+│   │                            #   blank page for any uncaught render error
+│   └── ui/                     # shadcn/ui + Radix primitives (accordion, dialog, toast, etc.) —
+│                                #   standard generated component library, mostly unused directly
+│                                #   except toast/toaster/tooltip/button
+│
 ├── contexts/
-│   └── I18nContext.tsx   # Language context — provides `t()`, `lang`, `toggleLang`, `isRTL`
+│   └── I18nContext.tsx        # Provides t(), lang, toggleLang, isRTL app-wide
+│
 ├── hooks/
-│   ├── use-mobile.tsx    # `useIsMobile()` responsive breakpoint hook
-│   └── use-toast.ts      # Toast notification system hook
+│   ├── use-mobile.tsx          # useIsMobile() breakpoint hook
+│   ├── use-toast.ts            # Toast state hook (backs components/ui/toaster.tsx)
+│   └── useScrollProgress.ts    # Scroll-position → [0,1] progress ref, drives the story scroll scene
+│
 └── lib/
-    ├── corridors.ts      # Corridor data, fee/speed math, Stellar constants
-    ├── receipt.ts        # ⭐ Client-side PDF receipt generator using jsPDF (12KB)
-    ├── i18n.ts           # EN/AR translation dictionary + `useI18n()` hook
-    ├── stellar.ts        # Freighter wallet SDK & Horizon transaction builder (11KB)
-    ├── rateLimit.ts      # Client-side rate limiting protection
-    ├── errors.ts         # Error normalization & user feedback formatting
-    ├── logger.ts         # `createLogger()` scoped logging system
-    └── utils.ts          # `cn()` Tailwind class merger
+    ├── corridors.ts            # Corridor data (bank wire/cash pickup/mobile money/Jisr-Stellar),
+    │                            #   fee math, and the real Stellar constants: CONTRACT_ID,
+    │                            #   TREASURY_ADDRESS, TOKEN_ADDRESS, FEDERATION_API_BASE,
+    │                            #   SOROBAN_RPC_URL, HORIZON_URL, NETWORK_PASSPHRASE (testnet)
+    ├── stellar.ts               # (327 lines) Real payment flow — NO mocked transactions:
+    │                            #   - connectFreighter/detectWalletEnvironment via
+    │                            #     @stellar/freighter-api (requestAccess, direct-on-click)
+    │                            #   - resolveFederation: real stellar-tags federation API call,
+    │                            #     throws (no fallback wallet) if unresolved
+    │                            #   - buildAndSubmitPayment: invokes route_payment on the
+    │                            #     deployed Soroban contract (prepare/sign/send/confirm),
+    │                            #     validates amount, checks network, retries transient
+    │                            #     failures with backoff
+    │                            #   - pollSettlement: polls Horizon for the confirmed tx,
+    │                            #     throws on-chain failure rather than reporting fake success
+    ├── receipt.ts               # (317 lines) generateReceiptPDF() — branded PDF receipt via
+    │                            #   jsPDF: tx hash, addresses, fee, savings vs. bank wire,
+    │                            #   contract ID. Triggered from AgentPipeline's Payment Complete card.
+    ├── errors.ts                # Classifies raw SDK/Freighter/fetch errors into typed codes
+    │                            #   (USER_REJECTED, WALLET_LOCKED, WRONG_NETWORK, NOT_FUNDED,
+    │                            #   RECIPIENT_NOT_FOUND, DIRECTORY_UNAVAILABLE, NETWORK,
+    │                            #   RATE_LIMITED, TIMEOUT, CONTRACT_FAILED) → user-facing messages
+    ├── rateLimit.ts             # Client-side per-action min-gap + rolling-window limiter
+    │                            #   (findRoute, submitPayment) — no backend to rate-limit against
+    ├── logger.ts                # createLogger(scope) — leveled logger, debug/info suppressed
+    │                            #   in production builds
+    ├── i18n.ts                  # EN/AR string dictionary + useI18n() hook (localStorage-persisted)
+    └── utils.ts                 # cn() Tailwind class merge helper
 ```
 
----
+### Routing (`App.tsx`)
 
-## Recent Feature Developments
-
-### 1. 🌓 Light & Dark Theme Engine
-- **`next-themes` Integration**: Added `<ThemeProvider attribute="class" defaultTheme="system" enableSystem>` in `App.tsx`.
-- **Semantic CSS System (`index.css`)**: Defined full Light Mode HSL palette in `:root` and Dark Mode palette under `.dark`.
-- **`ThemeToggle.tsx`**: Created animated Sun/Moon toggle button added to `Landing.tsx` and `Home.tsx` headers.
-- **Background Tokenization**: Replaced all hardcoded dark hex codes (`bg-[#0d0d14]`, `bg-[#111118]`, `bg-[#08080c]`) with semantic Tailwind classes (`bg-background`, `bg-card`, `bg-muted`).
-
-### 2. 🧾 Branded PDF Receipt Download (`lib/receipt.ts`)
-- **jsPDF Integration**: Built `generateBrandedReceiptPDF()` generating styled PDF receipts upon transaction settlement.
-- **Receipt Details**: Cryptographic Stellar transaction hash, sender/recipient addresses, fee breakdown, and savings vs bank wire calculation.
-- **Pipeline Trigger**: Integrated "Download PDF Receipt" action into `AgentPipeline.tsx` post-settlement state.
-
-### 3. 🛣 Landing & Dashboard Route Separation
-- **`Landing.tsx` (`/`)**: Dedicated marketing presentation page featuring the interactive 3D hero scene, feature benefits, how-it-works cards, and corridor comparison table.
-- **`Home.tsx` (`/app`)**: Dedicated transaction dashboard hosting Freighter wallet connection and the full 3-Agent pipeline UX.
-
-### 4. 🛡 Content Security Policy & Build Hardening
-- **Google Fonts CSP**: Configured `vercel.json` headers and `index.html` meta tags with explicit `style-src` (`fonts.googleapis.com`) and `font-src` (`fonts.gstatic.com`) permissions.
-- **PNPM v11 Compatibility**: Configured `allowBuilds` in `pnpm-workspace.yaml` for `esbuild` and `core-js`.
-- **Three.js Deprecation**: Updated `HeroScene.tsx` frame animation loop from `state.clock` to frame `delta` time.
-
----
-
-## Key Files Summary
-
-| File | Purpose |
-|---|---|
-| [App.tsx](file:///c:/Users/USER/Documents/jisr-pay/artifacts/jisr-pay/src/App.tsx) | App Root: ThemeProvider, QueryClientProvider, I18nProvider, TooltipProvider, Router |
-| [Landing.tsx](file:///c:/Users/USER/Documents/jisr-pay/artifacts/jisr-pay/src/pages/Landing.tsx) | Marketing Landing Page (`/`): Glassmorphism Header, 3D Hero, Features, Corridors Table |
-| [Home.tsx](file:///c:/Users/USER/Documents/jisr-pay/artifacts/jisr-pay/src/pages/Home.tsx) | Remittance App (`/app`): Wallet connection + AgentPipeline execution container |
-| [AgentPipeline.tsx](file:///c:/Users/USER/Documents/jisr-pay/artifacts/jisr-pay/src/components/AgentPipeline.tsx) | Core Pipeline: Rate-Scout → Router → Reconciler state machine & PDF download trigger |
-| [HeroScene.tsx](file:///c:/Users/USER/Documents/jisr-pay/artifacts/jisr-pay/src/components/HeroScene.tsx) | 3D WebGL metallic Torus bridge with radial cursor reveal mask |
-| [ThemeToggle.tsx](file:///c:/Users/USER/Documents/jisr-pay/artifacts/jisr-pay/src/components/ThemeToggle.tsx) | Sun/Moon theme switcher component for navigation bars |
-| [receipt.ts](file:///c:/Users/USER/Documents/jisr-pay/artifacts/jisr-pay/src/lib/receipt.ts) | Branded PDF receipt generator built with `jsPDF` |
-| [corridors.ts](file:///c:/Users/USER/Documents/jisr-pay/artifacts/jisr-pay/src/lib/corridors.ts) | Corridor definitions (AED, SAR, QAR, KWD to NGN, KES, GHS, ETB), fee math & Stellar constants |
-| [stellar.ts](file:///c:/Users/USER/Documents/jisr-pay/artifacts/jisr-pay/src/lib/stellar.ts) | Freighter wallet SDK integration, Soroban RPC connection, Horizon ledger polling |
-| [i18n.ts](file:///c:/Users/USER/Documents/jisr-pay/artifacts/jisr-pay/src/lib/i18n.ts) | Translation dictionary (EN/AR) & `useI18n()` hook |
-
----
-
-## Design System (`src/index.css`)
-
-| Token | Light Mode | Dark Mode | Purpose |
-|---|---|---|---|
-| `--background` | `hsl(0, 0%, 100%)` | `hsl(240, 10%, 4%)` | Page background |
-| `--foreground` | `hsl(240, 10%, 4%)` | `hsl(240, 5%, 93%)` | Primary text |
-| `--card` | `hsl(0, 0%, 100%)` | `hsl(240, 8%, 7%)` | Cards & containers |
-| `--primary` | `hsl(258, 84%, 57%)` | `hsl(258, 84%, 57%)` | Royal Violet brand color (`#7c3aed`) |
-| `--muted` | `hsl(240, 5%, 96%)` | `hsl(240, 8%, 12%)` | Muted elements & table headers |
-| `--border` | `hsl(240, 5%, 90%)` | `hsl(240, 8%, 14%)` | Component borders |
-
-Fonts: **Plus Jakarta Sans** (Latin) · **IBM Plex Sans Arabic** (RTL)
-
----
-
-## Supported Corridors & Fee Structure
-
-| Gulf Currency | Recipient Currency | Rail Comparison |
+| Path | Component | Purpose |
 |---|---|---|
-| UAE (AED) | Nigeria (NGN) | Bank Wire: 6.5% + $15 (2 days) |
-| Saudi Arabia (SAR) | Kenya (KES) | Cash Pickup: 5.0% + $10 (30 mins) |
-| Kuwait (KWD) | Ghana (GHS) | Mobile Money: 3.5% + $2 (15 mins) |
-| Qatar (QAR) | Ethiopia (ETB) | **Jisr Stellar: 0.4% flat (~5 seconds)** |
+| `/` | `pages/Landing.tsx` | Marketing/informational — 3D scrollytelling story, How It Works, corridor highlights. No payment tool. |
+| `/app` | `pages/Home.tsx` | The dashboard — wallet connect + the actual `AgentPipeline` payment flow. |
+| `*` | `pages/not-found.tsx` | 404 |
+
+There is **no login/auth system** — this is intentional. Connecting a Freighter wallet *is*
+the identity/authentication model (the address is cryptographically proven by the wallet's
+signature). Traditional email/password auth would need a real backend + database, neither of
+which the product uses.
 
 ---
 
-## Stellar Network Constants (Testnet)
+## 3. The payment flow, end to end
+
+1. **Rate-Scout** (`handleStart` in `AgentPipeline.tsx`) — reveals the 4 corridors
+   (`lib/corridors.ts`) one at a time, sorts by fee, highlights the Jisr/Stellar route as
+   cheapest. Client-rate-limited (`lib/rateLimit.ts`, `RULES.findRoute`).
+2. **Router** (`handleStep1Proceed` / `handleConnectWallet` / `handleSubmitTx`) —
+   - Resolves the recipient via `resolveFederation` (real stellar-tags API, or a raw `G...` key)
+   - Connects Freighter (`connectFreighter`, official `@stellar/freighter-api`, called directly
+     on click so the extension popup reliably appears)
+   - Builds and submits the transaction (`buildAndSubmitPayment`) — invokes `route_payment` on
+     the deployed Soroban contract with sender/recipient/treasury/token/amount, signs via
+     Freighter, submits via Soroban RPC. Rate-limited (`RULES.submitPayment`) + hard
+     double-submit guard.
+3. **Reconciler** (`pollSettlement`) — polls Horizon for the confirmed transaction; on success
+   shows the "Payment Complete" card (hash, fee, ledger, settlement time, savings vs. bank
+   wire) with **Copy hash**, **Download Receipt** (PDF), **Send Another**, and **View History**
+   (links to the account on stellar.expert) actions. Confetti fires on success.
+
+**No step in this flow ever fabricates a result.** Every failure mode (unfunded wallet, wrong
+network, unresolvable recipient, RPC timeout, on-chain failure) throws a typed, user-visible
+error — see `docs/EDGE_CASES.md` for the full matrix.
+
+---
+
+## 4. Stellar network constants (testnet) — `lib/corridors.ts`
 
 | Constant | Value |
 |---|---|
 | `CONTRACT_ID` | `CDNQ7OMHIFOLZHOKWQLOGDW7CF3DRMKXJC6OULNGNBWF4O4NO2NEIGER` |
 | `TREASURY_ADDRESS` | `GAAFWEZKDYPXLTQGKQ3F23TXWYQUDAYTDW7P7VUQSVJFW2GWC4Y6LWST` |
+| `TOKEN_ADDRESS` | `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` |
+| `FEDERATION_API_BASE` | `https://stellar-tags-production.up.railway.app` |
 | `SOROBAN_RPC_URL` | `https://soroban-testnet.stellar.org` |
 | `HORIZON_URL` | `https://horizon-testnet.stellar.org` |
+| `NETWORK_PASSPHRASE` | `Test SDF Network ; September 2015` |
+
+This is real, already-deployed infrastructure (from the sibling `stellar-tags` project) —
+not something this repo deploys itself. Mainnet is intentionally out of scope (no contract
+deployed there, no free funding, real money at risk for no benefit to a testnet demo).
 
 ---
 
-## Development & Build Commands
+## 5. Corridors & fee model — `lib/corridors.ts`
+
+| Corridor | Fee | Speed | Method |
+|---|---|---|---|
+| Bank Wire | 6.5% + $15 | ~2 days | SWIFT |
+| Cash Pickup | 5.0% + $10 | ~30 min | Agent network |
+| Mobile Money | 3.5% + $2 | ~15 min | M-Pesa API |
+| **Jisr (Stellar)** | **0.4% flat** | **~5 sec** | Soroban contract |
+
+`calculateTotal()`, `formatSpeed()`, `getBestCorridor()` are pure functions here — the easiest
+part of the codebase to unit test (see `docs/EDGE_CASES.md` §"amount" for validation rules
+applied before these numbers ever reach the chain).
+
+---
+
+## 6. Deployment & security
+
+- **Hosting:** Vercel, auto-deploys on every push to `main` (`vercel.json`: install/build
+  commands target the `artifacts/jisr-pay` workspace, output `dist/public`, SPA rewrite to
+  `index.html`).
+- **Headers (`vercel.json`):** a scoped Content-Security-Policy (`script-src 'self'
+  'unsafe-inline'`, `connect-src` limited to the 4 Stellar/federation hosts above + Google
+  Fonts allowances, `frame-ancestors 'none'`), plus `X-Frame-Options: DENY`,
+  `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS.
+- **Supply-chain (`pnpm-workspace.yaml`):** `minimumReleaseAge: 1440` (packages must be
+  published ≥1 day before install is allowed — supply-chain-attack defense), a curated
+  `minimumReleaseAgeExclude` allowlist, and a long list of platform-specific `overrides` that
+  strip unused OS/arch binaries (esbuild, lightningcss, rollup, tailwindcss/oxide, ngrok) since
+  the build only runs on Linux x64.
+- **No database, no backend in production.** `artifacts/api-server` and `lib/db` exist but are
+  not part of the deployed app.
+
+---
+
+## 7. Documentation map
+
+| File | What it's for |
+|---|---|
+| `CLAUDE.md` | Tells AI coding sessions to install/use the **gstack** skill suite (`/qa`, `/ship`, `/review`, etc.) |
+| `docs/EDGE_CASES.md` | Every edge case in the payment flow (wallet, amount, federation, network, lifecycle) and exactly how it's handled — pairs with `lib/errors.ts` / `lib/rateLimit.ts` |
+| `SUBMISSION.md` | Hackathon submission pitch: problem, 3-agent architecture, key features, tech stack |
+| `DEMO_SCRIPT.md` | Timestamped script for a 2-minute demo video |
+| `MARKETING_STRATEGY.md` | Go-to-market strategy — business doc, not implementation detail |
+| `README.md` | Project overview and quickstart — **see drift note below** |
+| `replit.md` | Replit run/operate template — mostly unfilled placeholder text |
+
+### Known drift (worth fixing, not yet reconciled)
+
+`README.md` describes an earlier state of the app and is now out of date in a few places: it
+says the theme is "dark-only" (light/dark theming was added later via `next-themes` +
+`ThemeToggle`), describes a single `Home.tsx` page (the app is now split into
+`Landing.tsx` + `Home.tsx`), and doesn't mention `JisrCopilot`, the PDF receipt, or the
+rate-limiting/error/logging hardening. Treat this index and the source tree as the source of
+truth over `README.md` until it's refreshed.
+
+---
+
+## 8. Development commands
 
 ```bash
-# Install dependencies
-pnpm install
-
-# Start frontend dev server
-pnpm --filter @workspace/jisr-pay run dev
-
-# Start API server
-pnpm --filter @workspace/api-server run dev
-
-# Typecheck all workspace packages
-pnpm run typecheck
-
-# Production build
-pnpm run build
+pnpm install                                          # install (from repo root)
+pnpm --filter @workspace/jisr-pay run dev              # frontend dev server (needs PORT, BASE_PATH env vars)
+pnpm --filter @workspace/jisr-pay run build            # production build → dist/public
+pnpm --filter @workspace/jisr-pay exec tsc --noEmit    # typecheck the frontend only
+pnpm run typecheck                                     # typecheck every workspace package
+pnpm run build                                         # typecheck + build everything (root script)
 ```
+
+The frontend's `vite.config.ts` requires `PORT` and `BASE_PATH` env vars to be set (throws
+otherwise) — Vercel's build command in `vercel.json` sets them; locally, export them yourself
+(e.g. `PORT=3000 BASE_PATH=/`).
