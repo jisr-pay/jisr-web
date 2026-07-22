@@ -1,3 +1,10 @@
 <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="180" height="180" rx="36" fill="#FF3C00"/>
+  <!-- Dark background tile -->
+  <rect width="180" height="180" rx="36" fill="#0a0a0f"/>
+  <!-- Violet bridge arc (matches nav SVG scaled to 180×180 canvas) -->
+  <path d="M30 135C30 135 55 60 90 60C125 60 150 135 150 135"
+        stroke="#7c3aed" stroke-width="12" stroke-linecap="round"/>
+  <!-- Gold anchor dots -->
+  <circle cx="30" cy="135" r="10" fill="#f59e0b"/>
+  <circle cx="150" cy="135" r="10" fill="#f59e0b"/>
 </svg>
