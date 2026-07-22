@@ -81,7 +81,7 @@ export function HeroScene() {
   const useFallback = !hasWebGL || reducedMotion;
 
   const gradientFallback = (
-    <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#0a0a0f] via-[#111118] to-[#2e1065] opacity-80" />
+    <div className="absolute inset-0 z-0 bg-gradient-to-br from-background via-card to-primary/20 opacity-80" />
   );
 
   return (
@@ -132,7 +132,7 @@ export function HeroScene() {
           <div
             className="hero-overlay absolute inset-0 z-10 transition-opacity duration-500 ease-out"
             style={{
-              background: `radial-gradient(circle 250px at var(--reveal-x) var(--reveal-y), transparent 0%, rgba(10,10,15,0.95) 100%)`,
+              background: `radial-gradient(circle 250px at var(--reveal-x) var(--reveal-y), transparent 0%, var(--hero-overlay-color, rgba(10,10,15,0.95)) 100%)`,
               opacity: isHovered ? 0.7 : 1,
               pointerEvents: 'none',
             }}

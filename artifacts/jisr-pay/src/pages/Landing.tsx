@@ -111,7 +111,7 @@ export default function Landing() {
         </section>
 
         {/* ── Features Strip ── */}
-        <section id="features" className="w-full py-20 px-6 bg-[#0d0d14] border-y border-border/50">
+        <section id="features" className="w-full py-20 px-6 bg-muted/40 border-y border-border/50">
           <div className="max-w-5xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-4">{t('navFeatures')}</h2>
             <p className="text-center text-muted-foreground mb-12 max-w-xl mx-auto">
@@ -160,7 +160,7 @@ export default function Landing() {
         </section>
 
         {/* ── Corridors Comparison ── */}
-        <section id="corridors" className="w-full py-20 px-6 bg-[#0d0d14]">
+        <section id="corridors" className="w-full py-20 px-6 bg-muted/40">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-3">{t('navCorridors')}</h2>
             <p className="text-center text-muted-foreground mb-10">
@@ -168,7 +168,7 @@ export default function Landing() {
             </p>
             <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xl">
               <table className="w-full text-sm">
-                <thead className="bg-[#1a1a24] text-muted-foreground border-b border-border">
+                <thead className="bg-muted text-muted-foreground border-b border-border">
                   <tr>
                     <th className="py-3 px-5 text-start font-medium">{t('provider')}</th>
                     <th className="py-3 px-5 font-medium">{t('fee')}</th>
@@ -218,7 +218,7 @@ export default function Landing() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="w-full border-t border-border py-8 px-6 bg-[#08080c] flex flex-col md:flex-row items-center justify-between gap-4">
+      <footer className="w-full border-t border-border py-8 px-6 bg-card flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M4 18C4 18 6 8 12 8C18 8 20 18 20 18" stroke="#7c3aed" strokeWidth="2.5" strokeLinecap="round"/>

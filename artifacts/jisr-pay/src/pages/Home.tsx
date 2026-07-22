@@ -87,7 +87,7 @@ export default function Home() {
       </main>
 
       {/* Dashboard Footer */}
-      <footer className="w-full border-t border-border py-5 px-6 bg-[#08080c] flex flex-col sm:flex-row items-center justify-between gap-3">
+      <footer className="w-full border-t border-border py-5 px-6 bg-card flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 text-muted-foreground text-sm font-medium">
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
           {t('poweredByStellar')}
