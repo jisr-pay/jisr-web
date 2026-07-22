@@ -98,14 +98,21 @@ export function HeroScene() {
           <div className="absolute inset-0 z-0">
             <SceneErrorBoundary fallback={gradientFallback}>
               <Suspense fallback={null}>
-                <Canvas camera={{ position: [0, 2, 8], fov: 45 }}>
+                <Canvas
+                  camera={{ position: [0, 2, 8], fov: 45 }}
+                  dpr={[1, 1.5]}
+                  gl={{
+                    antialias: true,
+                    alpha: true,
+                    powerPreference: "high-performance",
+                    precision: "mediump",
+                  }}
+                >
                   <ambientLight intensity={0.5} />
                   <pointLight position={[0, 5, 0]} intensity={2} color="#7c3aed" />
                   <directionalLight position={[5, 5, 5]} intensity={1.5} color="#ffffff" />
                   <BridgeArc />
-                  {/* Procedural environment — no external HDR fetch, so a
-                      network failure can never crash the scene. */}
-                  <Environment resolution={256} background={false}>
+                  <Environment resolution={128} background={false}>
                     <Lightformer
                       intensity={2}
                       position={[0, 4, -6]}
