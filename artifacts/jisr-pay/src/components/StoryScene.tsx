@@ -1,6 +1,7 @@
-import { useMemo, type RefObject } from "react";
+import { useRef, type RefObject } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { BridgeParticles } from "./BridgeParticles";
+import { Environment, Lightformer, Float } from "@react-three/drei";
+import * as THREE from "three";
 import { CameraRig } from "./CameraRig";
 import {
   PainPointsBeat,
@@ -14,18 +15,33 @@ interface StorySceneProps {
   progressRef: RefObject<number>;
 }
 
-function useLocalBridgeProgress(globalProgressRef: RefObject<number>, endT = 0.25) {
-  const localRef = useMemo(() => ({ current: 0 }), []);
-  useFrame(() => {
-    const t = globalProgressRef.current ?? 0;
-    localRef.current = Math.min(1, t / endT);
-  });
-  return localRef;
-}
+/**
+ * The original metallic Torus arc mesh from HeroScene
+ */
+function MetallicBridgeArc() {
+  const meshRef = useRef<THREE.Mesh>(null);
 
-function BridgeBackdrop({ progressRef }: StorySceneProps) {
-  const bridgeProgressRef = useLocalBridgeProgress(progressRef);
-  return <BridgeParticles progressRef={bridgeProgressRef} count={1200} />;
+  useFrame((_, delta) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y += delta * 0.05;
+    }
+  });
+
+  return (
+    <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
+      <mesh ref={meshRef} position={[0, -1, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[4, 0.2, 64, 128, Math.PI]} />
+        <meshPhysicalMaterial
+          color="#c0c0cc"
+          metalness={0.95}
+          roughness={0.1}
+          envMapIntensity={2}
+          clearcoat={1}
+          clearcoatRoughness={0.1}
+        />
+      </mesh>
+    </Float>
+  );
 }
 
 export function StoryScene({ progressRef }: StorySceneProps) {
@@ -36,13 +52,36 @@ export function StoryScene({ progressRef }: StorySceneProps) {
       gl={{ antialias: true, alpha: true }}
     >
       <ambientLight intensity={0.5} />
-      <pointLight position={[5, 5, 5]} intensity={1} color="#7c3aed" />
-      <directionalLight position={[0, 5, 5]} intensity={1} color="#ffffff" />
+      <pointLight position={[0, 5, 0]} intensity={2} color="#7c3aed" />
+      <directionalLight position={[5, 5, 5]} intensity={1.5} color="#ffffff" />
 
+      {/* 3D Camera Rig along Catmull-Rom spline */}
       <CameraRig progressRef={progressRef} />
 
-      {/* Opening beat backdrop particle bridge */}
-      <BridgeBackdrop progressRef={progressRef} />
+      {/* Original Metallic 3D Bridge Ring Arc */}
+      <MetallicBridgeArc />
+
+      {/* Procedural Environment Lightformers for metallic reflections */}
+      <Environment resolution={256} background={false}>
+        <Lightformer
+          intensity={2}
+          position={[0, 4, -6]}
+          scale={[12, 12, 1]}
+          color="#7c3aed"
+        />
+        <Lightformer
+          intensity={1.6}
+          position={[6, 1, 4]}
+          scale={[10, 10, 1]}
+          color="#ffffff"
+        />
+        <Lightformer
+          intensity={1}
+          position={[-6, 0, 4]}
+          scale={[10, 10, 1]}
+          color="#f59e0b"
+        />
+      </Environment>
 
       {/* 3D Positioned Story Beats */}
       <PainPointsBeat progressRef={progressRef} />
