@@ -82,6 +82,7 @@
     "@types/canvas-confetti": "^1.9.0",
     "@types/three": "^0.185.1",
     "canvas-confetti": "^1.9.4",
+    "jspdf": "^4.2.1",
     "three": "^0.185.1"
   }
 }

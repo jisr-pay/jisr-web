@@ -18,6 +18,7 @@ import {
 import { createLogger } from '@/lib/logger';
 import { toUserMessage } from '@/lib/errors';
 import { enforce, retryAfter, RULES } from '@/lib/rateLimit';
+import { generateReceiptPDF } from '@/lib/receipt';
 
 const log = createLogger('pipeline');
 import confetti from 'canvas-confetti';
@@ -126,44 +127,19 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
 
   const handleDownloadReceipt = () => {
     if (!txResult) return;
-    const now = new Date();
-    const lines = [
-      '============================================================',
-      '                  JISR PAY — TRANSACTION RECEIPT',
-      '============================================================',
-      '',
-      `Date / Time   : ${now.toUTCString()}`,
-      `Amount Sent   : ${amount} ${currency}`,
-      `Recipient     : ${resolvedKey ?? recipient}`,
-      '',
-      '------------------------------------------------------------',
-      '  PAYMENT DETAILS',
-      '------------------------------------------------------------',
-      `Transaction Hash : ${txResult.hash}`,
-      `Fee Paid         : ${txResult.feePaid}`,
-      `Settlement Time  : ${(txResult.settlementTimeMs / 1000).toFixed(2)}s`,
-      `Savings vs Wire  : $${savingsAmount.toFixed(2)} (${savingsPercent.toFixed(0)}%)`,
-      '',
-      '------------------------------------------------------------',
-      '  VERIFY ON STELLAR',
-      '------------------------------------------------------------',
-      `https://stellar.expert/explorer/testnet/tx/${txResult.hash}`,
-      '',
-      '============================================================',
-      '  Jisr Pay — Gulf ↔ Africa remittances at Stellar speed',
-      '  Network: Stellar Testnet  |  Contract: ' + CONTRACT_ID.slice(0, 10) + '...' + CONTRACT_ID.slice(-6),
-      '============================================================',
-    ].join('\n');
-
-    const blob = new Blob([lines], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `jisr-pay-receipt-${txResult.hash.slice(0, 8)}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    toast({ title: 'Receipt downloaded', description: `jisr-pay-receipt-${txResult.hash.slice(0, 8)}.txt` });
+    generateReceiptPDF({
+      amount,
+      currency,
+      recipient: resolvedKey ?? recipient,
+      txHash: txResult.hash,
+      feePaid: txResult.feePaid,
+      settlementTimeSec: txResult.settlementTimeMs / 1000,
+      savingsAmount,
+      savingsPercent,
+      contractId: CONTRACT_ID,
+      timestamp: new Date(),
+    });
+    toast({ title: 'Receipt downloaded', description: `jisr-pay-receipt-${txResult.hash.slice(0, 8)}.pdf` });
   };
 
   useEffect(() => {
