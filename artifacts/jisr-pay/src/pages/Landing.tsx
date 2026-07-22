@@ -1,4 +1,5 @@
 import { useI18nContext } from '@/contexts/I18nContext';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { HeroScene } from '@/components/HeroScene';
 import { HowItWorks } from '@/components/HowItWorks';
 import { Globe, ArrowRight, Zap, Shield, Globe2 } from 'lucide-react';
@@ -55,6 +56,7 @@ export default function Landing() {
 
         {/* Right controls */}
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <button
             onClick={toggleLang}
             className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors bg-secondary px-3 py-1.5 rounded-full"

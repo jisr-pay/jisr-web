@@ -69,6 +69,62 @@
 }
 
 :root {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 4%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 4%;
+  --card-border: 240 5% 90%;
+  --primary: 258 84% 57%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 5% 96%;
+  --secondary-foreground: 240 5% 20%;
+  --muted: 240 5% 96%;
+  --muted-foreground: 240 5% 40%;
+  --accent: 258 84% 57%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 240 5% 90%;
+  --input: 240 5% 90%;
+  --ring: 258 84% 57%;
+  --sidebar: 240 5% 98%;
+  --sidebar-foreground: 240 5% 20%;
+  --sidebar-border: 240 5% 90%;
+  --sidebar-primary: 258 84% 57%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 240 5% 96%;
+  --sidebar-accent-foreground: 240 5% 20%;
+  --sidebar-ring: 258 84% 57%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 4%;
+  --popover-border: 240 5% 90%;
+  --chart-1: 258 84% 57%;
+  --chart-2: 174 72% 56%;
+  --chart-3: 45 93% 47%;
+  --chart-4: 316 72% 58%;
+  --chart-5: 28 100% 56%;
+  --app-font-sans: 'Plus Jakarta Sans', sans-serif;
+  --app-font-serif: Georgia, serif;
+  --app-font-mono: 'JetBrains Mono', monospace;
+  --radius: 0.75rem;
+
+  --button-outline: rgba(0, 0, 0, 0.1);
+  --badge-outline: rgba(0, 0, 0, 0.05);
+  --opaque-button-border-intensity: 9;
+  --elevate-1: rgba(0, 0, 0, 0.04);
+  --elevate-2: rgba(0, 0, 0, 0.09);
+
+  --shadow-2xs: 0px 2px 0px 0px rgba(0, 0, 0, 0.05);
+  --shadow-xs: 0px 2px 0px 0px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0px 2px 0px 0px rgba(0, 0, 0, 0.05), 0px 1px 2px -1px rgba(0, 0, 0, 0.05);
+  --shadow: 0px 2px 0px 0px rgba(0, 0, 0, 0.05), 0px 1px 2px -1px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0px 2px 0px 0px rgba(0, 0, 0, 0.05), 0px 2px 4px -1px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0px 2px 0px 0px rgba(0, 0, 0, 0.05), 0px 4px 6px -1px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0px 2px 0px 0px rgba(0, 0, 0, 0.05), 0px 8px 10px -1px rgba(0, 0, 0, 0.05);
+  --shadow-2xl: 0px 2px 0px 0px rgba(0, 0, 0, 0.05);
+}
+
+.dark {
   --background: 240 10% 4%;        /* #0a0a0f near-black */
   --foreground: 240 5% 93%;        /* near-white text */
   --card: 240 8% 7%;               /* #111118 */
@@ -122,39 +178,6 @@
   --shadow-lg: 0px 2px 0px 0px rgba(0, 0, 0, 0.2), 0px 4px 6px -1px rgba(0, 0, 0, 0.2);
   --shadow-xl: 0px 2px 0px 0px rgba(0, 0, 0, 0.2), 0px 8px 10px -1px rgba(0, 0, 0, 0.2);
   --shadow-2xl: 0px 2px 0px 0px rgba(0, 0, 0, 0.2);
-}
-
-.dark {
-  /* Mirror the variables here so the dark class works the same if explicitly added */
-  --background: 240 10% 4%;
-  --foreground: 240 5% 93%;
-  --card: 240 8% 7%;
-  --card-foreground: 240 5% 93%;
-  --card-border: 258 84% 50%;
-  --primary: 258 84% 57%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 240 8% 12%;
-  --secondary-foreground: 240 5% 80%;
-  --muted: 240 8% 12%;
-  --muted-foreground: 240 5% 55%;
-  --accent: 258 84% 57%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 240 8% 14%;
-  --input: 240 8% 12%;
-  --ring: 258 84% 57%;
-  --sidebar: 240 10% 4%;
-  --sidebar-foreground: 240 5% 93%;
-  --sidebar-border: 240 8% 14%;
-  --sidebar-primary: 258 84% 57%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 8% 12%;
-  --sidebar-accent-foreground: 240 5% 80%;
-  --sidebar-ring: 258 84% 57%;
-  --popover: 240 8% 7%;
-  --popover-foreground: 240 5% 93%;
-  --popover-border: 240 8% 14%;
 }
 
 html[lang="ar"], [dir="rtl"] {
