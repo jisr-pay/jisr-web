@@ -61,7 +61,8 @@ artifacts/jisr-pay/src/
 │   └── not-found.tsx     # 404 Error page
 ├── components/
 │   ├── AgentPipeline.tsx # ⭐ Core 3-Agent pipeline UX + live route comparison + PDF download (34KB)
-│   ├── HeroScene.tsx     # Three.js 3D torus-arc hero animation with cursor radial mask
+│   ├── JisrCopilot.tsx   # ⭐ Floating AI Assistant widget with interactive remittance intelligence
+│   ├── HeroScene.tsx     # Three.js 3D metallic torus-arc hero animation with cursor radial mask
 │   ├── HowItWorks.tsx    # Animated 3-step breakdown of AI Agents
 │   ├── ThemeToggle.tsx   # Sun/Moon light/dark mode switcher component
 │   ├── RootErrorBoundary.tsx # Global React error boundary
