@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { useI18nContext } from '@/contexts/I18nContext';
 import { AgentPipeline } from '@/components/AgentPipeline';
 import { Wallet, Globe, ArrowLeft } from 'lucide-react';
@@ -52,6 +53,7 @@ export default function Home() {
 
         {/* Right: language + wallet */}
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <button
             onClick={toggleLang}
             className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors bg-secondary px-3 py-1.5 rounded-full"
