@@ -69,6 +69,7 @@
 }
 
 :root {
+  --hero-overlay-color: rgba(255, 255, 255, 0.85);
   --background: 0 0% 100%;
   --foreground: 240 10% 4%;
   --card: 0 0% 100%;
@@ -125,6 +126,7 @@
 }
 
 .dark {
+  --hero-overlay-color: rgba(10, 10, 15, 0.95);
   --background: 240 10% 4%;        /* #0a0a0f near-black */
   --foreground: 240 5% 93%;        /* near-white text */
   --card: 240 8% 7%;               /* #111118 */

@@ -430,7 +430,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                     )}
                   </div>
                   
-                  <div className="bg-[#111118] border border-border rounded-xl overflow-hidden shadow-inner relative">
+                  <div className="bg-card border border-border rounded-xl overflow-hidden shadow-inner relative">
                     {isScanning && (
                       <motion.div 
                         className="absolute inset-0 bg-primary/5 z-10 pointer-events-none"
@@ -439,7 +439,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                       />
                     )}
                     <table className="w-full text-sm text-start">
-                      <thead className="bg-[#1a1a24] text-muted-foreground border-b border-border">
+                      <thead className="bg-muted text-muted-foreground border-b border-border">
                         <tr>
                           <th className="py-3 px-4 font-medium">{t('provider')}</th>
                           <th className="py-3 px-4 font-medium">{t('fee')}</th>
@@ -511,7 +511,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                         <span className={isResolving ? 'text-amber-500' : 'text-emerald-500'}>{t('resolvingFederation')}</span>
                       </div>
                       {resolvedKey && (
-                        <div className="bg-[#111118] border border-border rounded-lg p-3 ms-8 text-sm font-mono text-muted-foreground flex justify-between items-center break-all">
+                        <div className="bg-muted border border-border rounded-lg p-3 ms-8 text-sm font-mono text-muted-foreground flex justify-between items-center break-all">
                           {resolvedKey}
                         </div>
                       )}
@@ -527,7 +527,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                         <motion.div 
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
-                          className="bg-[#111118] border border-border rounded-xl p-5 ms-8 flex flex-col gap-4 mt-2 shadow-inner"
+                          className="bg-card border border-border rounded-xl p-5 ms-8 flex flex-col gap-4 mt-2 shadow-inner"
                         >
                           <div className="grid grid-cols-2 gap-4">
                             <div>
