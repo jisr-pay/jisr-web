@@ -6,6 +6,7 @@ import { Route, Switch, Router as WouterRouter } from 'wouter';
 import Home from '@/pages/Home';
 import Landing from '@/pages/Landing';
 import { I18nProvider } from '@/contexts/I18nContext';
+import { JisrCopilot } from '@/components/JisrCopilot';
 import { RootErrorBoundary } from '@/components/RootErrorBoundary';
 import { createLogger } from '@/lib/logger';
 import { useEffect } from 'react';
@@ -48,6 +49,7 @@ function App() {
               <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
                 <Router />
               </WouterRouter>
+              <JisrCopilot />
               <Toaster />
             </TooltipProvider>
           </I18nProvider>
