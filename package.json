@@ -16,9 +16,5 @@
     "prettier": "^3.9.5",
     "typescript": "~5.9.3"
   },
-  "pnpm": {
-    "overrides": {
-      "axios": ">=1.18.0"
-    }
-  }
+  "packageManager": "pnpm@11.8.0"
 }
