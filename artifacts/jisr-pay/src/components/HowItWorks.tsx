@@ -46,7 +46,7 @@ export function HowItWorks() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-3xl md:text-5xl font-extrabold tracking-tight text-foreground"
+          className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground"
         >
           {t('hiwTitle')}
         </motion.h2>
