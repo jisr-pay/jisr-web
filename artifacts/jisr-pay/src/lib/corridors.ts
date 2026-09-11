@@ -1,3 +1,5 @@
+import { resolveNetworkConfig } from './network-config';
+
 export interface Corridor {
   id: string;
   nameKey: 'bankWire' | 'cashPickup' | 'mobileMoney' | 'jisrStellar';
@@ -64,15 +66,13 @@ export function getBestCorridor(corridors: Corridor[]): Corridor {
   );
 }
 
-// Deployed stellar-tags payment_router infrastructure (Stellar testnet).
-// All values can be overridden at build time via VITE_* env vars (see
-// .env.example) — e.g. point at mainnet or a different contract deployment
-// without touching code.
-export const CONTRACT_ID = import.meta.env.VITE_CONTRACT_ID ?? 'CDNQ7OMHIFOLZHOKWQLOGDW7CF3DRMKXJC6OULNGNBWF4O4NO2NEIGER';
-export const TREASURY_ADDRESS = import.meta.env.VITE_TREASURY_ADDRESS ?? 'GAAFWEZKDYPXLTQGKQ3F23TXWYQUDAYTDW7P7VUQSVJFW2GWC4Y6LWST';
-export const TOKEN_ADDRESS = import.meta.env.VITE_TOKEN_ADDRESS ?? 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC';
-export const FEDERATION_API_BASE = import.meta.env.VITE_FEDERATION_API_BASE ?? 'https://stellar-tags-production.up.railway.app';
-export const SOROBAN_RPC_URL = import.meta.env.VITE_SOROBAN_RPC_URL ?? 'https://soroban-testnet.stellar.org';
-export const HORIZON_URL = import.meta.env.VITE_HORIZON_URL ?? 'https://horizon-testnet.stellar.org';
-export const NETWORK_PASSPHRASE = import.meta.env.VITE_NETWORK_PASSPHRASE ?? 'Test SDF Network ; September 2015';
-export const STELLAR_NETWORK = import.meta.env.VITE_NETWORK_PASSPHRASE ? 'CUSTOM' : 'TESTNET';
+// Signing, saved history and receipts consistently target native Testnet XLM.
+const networkConfig = resolveNetworkConfig(import.meta.env);
+export const CONTRACT_ID = networkConfig.contractId;
+export const TREASURY_ADDRESS = networkConfig.treasuryAddress;
+export const TOKEN_ADDRESS = networkConfig.tokenAddress;
+export const FEDERATION_API_BASE = networkConfig.federationUrl;
+export const SOROBAN_RPC_URL = networkConfig.rpcUrl;
+export const HORIZON_URL = networkConfig.horizonUrl;
+export const NETWORK_PASSPHRASE = networkConfig.networkPassphrase;
+export const STELLAR_NETWORK = networkConfig.network;
