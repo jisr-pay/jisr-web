@@ -2,6 +2,11 @@
 
 > Written Sept 11, 2026 after pushing `1d25bdc`. Everything below was verified
 > against the code, not guessed. Resume from **P0** and work down.
+>
+> **Progress (Sept 11, later):** P0-1, P0-2, P1-3, P1-4, P1-5, P1-7 and P1-8
+> are done. P1-6 needed no change — the stroop boundaries were already pinned
+> (`amount.test.ts` covers 1 stroop, the app max, and one-past-max). Remaining:
+> P2 items 9–12.
 
 ---
 
