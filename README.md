@@ -2,7 +2,7 @@
 
 > **Gulf ↔ Africa remittances at Stellar speed — AI-routed, blockchain-settled, a fraction of the cost.**
 
-Jisr Pay is a hackathon fintech demo that reimagines cross-border remittances for Gulf-to-Africa corridors. A 3-agent AI pipeline (Rate-Scout → Router → Reconciler) finds the best route, builds a Stellar transaction, and settles it on-chain in seconds — all from a single-page web app with full English/Arabic RTL support.
+Jisr Pay is a hackathon fintech demo for Gulf-to-Africa remittances. Its three-stage interface (Rate-Scout → Router → Reconciler) compares illustrative fees, builds a native XLM payment on Stellar Testnet, and checks its network result. The comparison data is static; it does not execute bank transfers, convert fiat currencies, or use a live AI routing service. The app supports English and Arabic with RTL layouts.
 
 ---
 
@@ -11,16 +11,19 @@ Jisr Pay is a hackathon fintech demo that reimagines cross-border remittances fo
 | Feature | Details |
 |---|---|
 | **3-Agent AI Pipeline** | Rate-Scout scans corridors, Router resolves addresses & builds Stellar txs, Reconciler polls the ledger and confirms settlement |
-| **Stellar Blockchain** | Real `@stellar/stellar-sdk` integration — Testnet by default, Mainnet-ready |
+| **Stellar Blockchain** | Real `@stellar/stellar-sdk` integration for native Testnet XLM; Mainnet configuration is rejected |
 | **Freighter Wallet** | Native browser-extension wallet connect; graceful fallback for mobile |
-| **Corridor Comparison** | Live fee/speed table — Bank Wire, Cash Pickup, Mobile Money vs Jisr's 0.4% Stellar route |
+| **Corridor Comparison** | Illustrative fee/speed table with percentage and fixed charges; not a live quote |
 | **English / Arabic** | Full i18n with RTL layout mirroring, IBM Plex Sans Arabic, `dir` switching |
 | **3D Hero** | `react-three-fiber` metallic torus-arc scene with mouse-hover radial reveal |
 | **Confetti Settlement** | `canvas-confetti` burst on transaction confirmation |
 
 ---
 
-## 🗺️ Supported Corridors
+## 🗺️ Illustrative Corridor Scenarios
+
+These are product examples, not operational fiat payout integrations. Actual
+payments in the dashboard use native Testnet XLM between Stellar accounts.
 
 | From | To | Methods |
 |---|---|---|
@@ -33,10 +36,10 @@ Jisr Pay is a hackathon fintech demo that reimagines cross-border remittances fo
 
 ## 🏗️ Tech Stack
 
-- **Frontend** — React 18 + Vite + TypeScript
+- **Frontend** — React 19 + Vite + TypeScript
 - **3D** — `@react-three/fiber`, `@react-three/drei`, `three.js`
 - **Blockchain** — `@stellar/stellar-sdk` (Horizon API)
-- **Styling** — Tailwind CSS v4, dark-only theme
+- **Styling** — Tailwind CSS v4, light/dark themes
 - **i18n** — Custom `useI18n()` hook with EN/AR dictionary
 - **Animations** — `canvas-confetti`
 - **Router** — `wouter`
@@ -94,9 +97,12 @@ wallet filters history to transfers sent by that wallet.
 History is local to this browser; clearing site data removes it. Cross-device
 history and recovery require a backend and are not implemented.
 
-Run `pnpm test` for amount, history recovery and confirmation-response tests.
+Run `pnpm test` for amount, history recovery, confirmation-response,
+configuration, clipboard and fee-comparison tests.
 CI runs these checks and the workspace build on Linux and Windows with Node 22
-and 24. Wallet signing still needs a manual Testnet verification.
+and 24. Wallet signing still needs a manual Testnet verification. See
+[validation and release acceptance](docs/TESTING.md) for coverage, known local
+verification limits, and the browser acceptance procedure.
 
 ---
 
@@ -106,8 +112,10 @@ and 24. Wallet signing still needs a manual Testnet verification.
 2. Enter any amount (e.g. `100`) in **You Send**
 3. Enter any recipient (e.g. `alice*jisr.pay`)
 4. Click **Find the Best Route**
-5. Watch the 3-agent pipeline animate through all three steps
-6. The Reconciler will pause and prompt you to connect a wallet — that's expected
+5. Review the illustrative corridor comparison, then continue to payment review
+6. Connect a wallet and resolve a valid recipient before signing. A federation
+   lookup may fail if its external service is unavailable; use a valid public
+   key for wallet testing. No-wallet testing cannot confirm settlement.
 
 ---
 
