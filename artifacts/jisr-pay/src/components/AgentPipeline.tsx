@@ -388,10 +388,10 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
     frame();
   };
 
-  const bestCorridor = getBestCorridor(CORRIDORS);
   const worstCorridor = CORRIDORS.find(c => c.id === 'bank-wire');
   // Marketing comparison is a separate USD example, not an XLM exchange quote.
   const numAmount = 500;
+  const bestCorridor = getBestCorridor(CORRIDORS, numAmount);
   const savingsAmount = worstCorridor ? calculateTotal(worstCorridor, numAmount) - calculateTotal(bestCorridor, numAmount) : 0;
   const savingsPercent = worstCorridor ? (savingsAmount / calculateTotal(worstCorridor, numAmount)) * 100 : 0;
 
