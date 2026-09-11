@@ -9,7 +9,7 @@ import { I18nProvider, useI18nContext } from '@/contexts/I18nContext';
 import { JisrCopilot } from '@/components/JisrCopilot';
 import { RootErrorBoundary } from '@/components/RootErrorBoundary';
 import { ChunkLoadRecovery } from '@/components/ChunkLoadRecovery';
-import { createLogger } from '@/lib/logger';
+import { createLogger } from '@workspace/jisr-sdk';
 
 import { ThemeProvider } from 'next-themes';
 

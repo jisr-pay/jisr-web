@@ -1,5 +1,5 @@
 import { Component, ReactNode } from 'react';
-import { createLogger } from '@/lib/logger';
+import { createLogger } from '@workspace/jisr-sdk';
 
 const log = createLogger('root');
 
