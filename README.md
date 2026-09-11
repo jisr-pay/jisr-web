@@ -2,7 +2,7 @@
 
 > **Gulf ↔ Africa remittances at Stellar speed — AI-routed, blockchain-settled, a fraction of the cost.**
 
-Jisr Pay is a hackathon fintech demo for Gulf-to-Africa remittances. Its three-stage interface (Rate-Scout → Router → Reconciler) compares illustrative fees, builds a native XLM payment on Stellar Testnet, and checks its network result. The comparison data is static; it does not execute bank transfers, convert fiat currencies, or use a live AI routing service. The app supports English and Arabic with RTL layouts.
+Jisr Pay is a hackathon fintech demo for Gulf-to-Africa remittances. Its three-stage pipeline (Rate-Scout → Router → Reconciler) compares illustrative fees, builds a native XLM payment on Stellar Testnet, and checks its network result. The comparison data is static; it does not execute bank transfers, convert fiat currencies, or use a live AI routing service. The app supports English and Arabic with RTL layouts.
 
 ---
 
@@ -10,7 +10,7 @@ Jisr Pay is a hackathon fintech demo for Gulf-to-Africa remittances. Its three-s
 
 | Feature | Details |
 |---|---|
-| **3-Agent AI Pipeline** | Rate-Scout scans corridors, Router resolves addresses & builds Stellar txs, Reconciler polls the ledger and confirms settlement |
+| **3-Agent Pipeline** | Rate-Scout scans corridors, Router resolves addresses & builds Stellar txs, Reconciler polls the ledger and confirms settlement |
 | **Stellar Blockchain** | Real `@stellar/stellar-sdk` integration for native Testnet XLM; Mainnet configuration is rejected |
 | **Freighter Wallet** | Native browser-extension wallet connect; graceful fallback for mobile |
 | **Corridor Comparison** | Illustrative fee/speed table with percentage and fixed charges; not a live quote |
@@ -144,18 +144,23 @@ verification limits, and the browser acceptance procedure.
 artifacts/jisr-pay/
 ├── src/
 │   ├── components/
-│   │   ├── HeroScene.tsx      # react-three-fiber 3D metallic arc
-│   │   └── AgentPipeline.tsx  # 3-agent pipeline UI + corridor table
+│   │   ├── HeroScene.tsx       # react-three-fiber 3D metallic arc
+│   │   ├── AgentPipeline.tsx   # 3-agent pipeline UI + corridor table
+│   │   ├── JisrCopilot.tsx     # floating assistant widget (draggable, EN/AR)
+│   │   └── TransferHistory.tsx # per-browser transfer journal & recovery
 │   ├── contexts/
-│   │   └── I18nContext.tsx    # Language context (EN/AR)
+│   │   └── I18nContext.tsx     # Language context (EN/AR)
 │   ├── lib/
-│   │   ├── corridors.ts       # Corridor data, fees, speeds
-│   │   ├── i18n.ts            # Translation strings + useI18n() hook
-│   │   └── stellar.ts         # Freighter + Stellar SDK helpers
+│   │   ├── corridors.ts        # Corridor data, fees, speeds
+│   │   ├── i18n.ts             # Translation strings + useI18n() hook
+│   │   ├── stellar.ts          # Freighter + Stellar SDK helpers
+│   │   ├── transfer-history.ts # local persistence for signed transfers
+│   │   └── receipt.ts          # jsPDF receipt generation
 │   ├── pages/
-│   │   └── Home.tsx           # Single-page layout
+│   │   ├── Landing.tsx         # "/" marketing page (3D scroll story)
+│   │   └── Home.tsx            # "/app" dashboard with the payment flow
 │   ├── App.tsx
-│   └── index.css              # Jisr design tokens + Google Fonts
+│   └── index.css               # Jisr design tokens + Google Fonts
 └── vite.config.ts
 ```
 
