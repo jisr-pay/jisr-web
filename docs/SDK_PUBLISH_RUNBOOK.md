@@ -15,6 +15,8 @@ Follows docs/COLLABORATION_PLAN.md step 6 and docs/ORG_SETUP.md §6.5–6.6. The
 ## 2. Push procedure (EthTobi only)
 
 1. Confirm `https://github.com/jisr-pay/jisr-sdk` exists and is **empty** — no README, no license, no gitignore commit (ORG_SETUP §6.6).
+
+   > **Post-script (2026-09-12):** the repo was not empty — it contained a LICENSE-only "Initial commit" (`28230fc`, EthTobi). That stub was superseded via `git push --force-with-lease` so the published history stays exactly the validated rewrite; a local `backup/initial-commit` branch in the scratch clone preserves the stub. The prepared repo's MIT LICENSE line reads "Jisr Pay contributors" vs the stub's "jisr-pay" — keep the contributors form unless the owners decide otherwise.
 2. In `C:\Users\ADMIN\jisr-sdk-publish-prep`:
    ```bash
    git remote add origin https://github.com/jisr-pay/jisr-sdk.git
