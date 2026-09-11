@@ -26,7 +26,9 @@ jisr-pay/
 │   └── db/                  # Drizzle ORM + Postgres config — schema is EMPTY, unused
 ├── scripts/                 # Workspace utility scripts (currently a placeholder)
 ├── docs/
-│   └── EDGE_CASES.md        # Every failure mode in the payment flow and how it's handled
+│   ├── EDGE_CASES.md        # Every failure mode in the payment flow and how it's handled
+│   ├── OPERATIONS_AUDIT.md  # Operational audit: what is real vs. illustrative, deployment posture
+│   └── TESTING.md           # Regression coverage, known verification limits, acceptance steps
 ├── attached_assets/         # Ad-hoc assets dropped in by Replit (image, kickoff prompt)
 ├── CLAUDE.md                # gstack skill-suite setup instructions for AI coding sessions
 ├── README.md                # Project overview (see "Known drift" — partially stale)
@@ -127,7 +129,7 @@ artifacts/jisr-pay/src/
     │                            #   fee math, and the real Stellar constants: CONTRACT_ID,
     │                            #   TREASURY_ADDRESS, TOKEN_ADDRESS, FEDERATION_API_BASE,
     │                            #   SOROBAN_RPC_URL, HORIZON_URL, NETWORK_PASSPHRASE (testnet)
-    ├── stellar.ts               # (327 lines) Real payment flow — NO mocked transactions:
+    ├── stellar.ts               # Real payment flow — NO mocked transactions:
     │                            #   - connectFreighter/detectWalletEnvironment via
     │                            #     @stellar/freighter-api (requestAccess, direct-on-click)
     │                            #   - resolveFederation: real stellar-tags federation API call,
@@ -138,9 +140,20 @@ artifacts/jisr-pay/src/
     │                            #     failures with backoff
     │                            #   - pollSettlement: polls Horizon for the confirmed tx,
     │                            #     throws on-chain failure rather than reporting fake success
-    ├── receipt.ts               # (317 lines) generateReceiptPDF() — branded PDF receipt via
-    │                            #   jsPDF: tx hash, addresses, fee, savings vs. bank wire,
-    │                            #   contract ID. Triggered from AgentPipeline's Payment Complete card.
+    ├── receipt.ts               # generateReceiptPDF() — branded PDF receipt via jsPDF: tx hash,
+    │                            #   addresses, fee, savings vs. bank wire, contract ID.
+    │                            #   Platform specifics live in receipt-impl.ts. Triggered from
+    │                            #   AgentPipeline's Payment Complete card and transfer history.
+    ├── settlement.ts            # checkConfirmation(): the only path to a "confirmed" state —
+    │                            #   reconciles an already-broadcast transaction against the
+    │                            #   network; never fabricates success for an unknown outcome
+    ├── transfer-history.ts      # Per-browser journal (localStorage) of signed transfers: hash and
+    │                            #   details are saved BEFORE broadcast (saving failure stops the
+    │                            #   send), pending transfers can be re-checked without re-signing
+    ├── amount.ts                # Payment amount parsing/validation shared by form and pipeline
+    ├── clipboard.ts             # Clipboard write with manual fallback for restricted contexts
+    ├── network-config.ts        # Env-driven Stellar constants; hard-rejects non-Testnet
+    │                            #   passphrases, non-XLM tokens, and non-HTTPS endpoints
     ├── errors.ts                # Classifies raw SDK/Freighter/fetch errors into typed codes
     │                            #   (USER_REJECTED, WALLET_LOCKED, WRONG_NETWORK, NOT_FUNDED,
     │                            #   RECIPIENT_NOT_FOUND, DIRECTORY_UNAVAILABLE, NETWORK,
@@ -250,20 +263,19 @@ applied before these numbers ever reach the chain).
 |---|---|
 | `CLAUDE.md` | Tells AI coding sessions to install/use the **gstack** skill suite (`/qa`, `/ship`, `/review`, etc.) |
 | `docs/EDGE_CASES.md` | Every edge case in the payment flow (wallet, amount, federation, network, lifecycle) and exactly how it's handled — pairs with `lib/errors.ts` / `lib/rateLimit.ts` |
+| `docs/OPERATIONS_AUDIT.md` | Operational audit separating verified behavior from illustrative claims |
+| `docs/TESTING.md` | What the automated regression suite covers, its limits, and the manual Testnet acceptance procedure |
 | `SUBMISSION.md` | Hackathon submission pitch: problem, 3-agent architecture, key features, tech stack |
 | `DEMO_SCRIPT.md` | Timestamped script for a 2-minute demo video |
 | `MARKETING_STRATEGY.md` | Go-to-market strategy — business doc, not implementation detail |
 | `README.md` | Project overview and quickstart — **see drift note below** |
 | `replit.md` | Replit run/operate template — mostly unfilled placeholder text |
 
-### Known drift (worth fixing, not yet reconciled)
+### Drift watch
 
-`README.md` describes an earlier state of the app and is now out of date in a few places: it
-says the theme is "dark-only" (light/dark theming was added later via `next-themes` +
-`ThemeToggle`), describes a single `Home.tsx` page (the app is now split into
-`Landing.tsx` + `Home.tsx`), and doesn't mention `JisrCopilot`, the PDF receipt, or the
-rate-limiting/error/logging hardening. Treat this index and the source tree as the source of
-truth over `README.md` until it's refreshed.
+`README.md` was reconciled with the current implementation (design tokens, tech stack,
+feature list, source tree, landing/app split). This index and the source tree remain the
+source of truth — if you change the architecture, update both.
 
 ---
 
@@ -274,6 +286,8 @@ pnpm install                                          # install (from repo root)
 pnpm --filter @workspace/jisr-pay run dev              # frontend dev server (needs PORT, BASE_PATH env vars)
 pnpm --filter @workspace/jisr-pay run build            # production build → dist/public
 pnpm --filter @workspace/jisr-pay exec tsc --noEmit    # typecheck the frontend only
+pnpm test                                              # run the lib regression suite (amount,
+                                                       #   fees, settlement, history, config, clipboard)
 pnpm run typecheck                                     # typecheck every workspace package
 pnpm run build                                         # typecheck + build everything (root script)
 ```
