@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useI18nContext } from '@/contexts/I18nContext';
 import { AgentPipeline } from '@/components/AgentPipeline';
@@ -7,16 +7,31 @@ import { Wallet, Globe, ArrowLeft } from 'lucide-react';
 import { connectFreighter } from '@/lib/stellar';
 import { CONTRACT_ID } from '@/lib/corridors';
 import { useLocation } from 'wouter';
+import { useToast } from '@/hooks/use-toast';
+import { toUserMessage } from '@/lib/errors';
 
 export default function Home() {
   const { t, lang, toggleLang, isRTL } = useI18nContext();
   const [walletKey, setWalletKey] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const connectingRef = useRef(false);
+  const { toast } = useToast();
   const [, navigate] = useLocation();
 
   const handleConnect = async () => {
-    const key = await connectFreighter();
-    if (key) setWalletKey(key);
-    else alert(t('installFreighter'));
+    if (connectingRef.current || walletKey) return;
+    connectingRef.current = true;
+    setConnecting(true);
+    try {
+      const key = await connectFreighter();
+      if (key) setWalletKey(key);
+      else toast({ title: t('installFreighter'), variant: 'destructive' });
+    } catch (error) {
+      toast({ title: toUserMessage(error), variant: 'destructive' });
+    } finally {
+      connectingRef.current = false;
+      setConnecting(false);
+    }
   };
 
   return (
@@ -31,6 +46,7 @@ export default function Home() {
           <button
             onClick={() => navigate('/')}
             title={t('backToHome')}
+            aria-label={t('backToHome')}
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
@@ -65,11 +81,14 @@ export default function Home() {
 
           <button
             onClick={handleConnect}
+            disabled={connecting || !!walletKey}
+            aria-busy={connecting}
+            aria-label={walletKey ?? t('connectWallet')}
             className="flex items-center gap-2 text-sm font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 px-4 py-2 rounded-full transition-all"
           >
             <Wallet className="w-4 h-4" />
             <span className="hidden sm:inline">
-              {walletKey ? `${walletKey.slice(0, 4)}...${walletKey.slice(-4)}` : t('connectWallet')}
+              {connecting ? t('loading') : walletKey ? `${walletKey.slice(0, 4)}...${walletKey.slice(-4)}` : t('connectWallet')}
             </span>
           </button>
         </div>
