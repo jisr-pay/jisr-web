@@ -6,7 +6,7 @@ import * as THREE from 'three';
 // Catches any error thrown while rendering the 3D scene (e.g. a WebGL context
 // failure) so it degrades to the gradient fallback instead of blanking the
 // entire page. Suspense does NOT catch render errors — this does.
-class SceneErrorBoundary extends Component<
+export class SceneErrorBoundary extends Component<
   { fallback: ReactNode; children: ReactNode },
   { hasError: boolean }
 > {
