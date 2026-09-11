@@ -20,6 +20,7 @@ import { toUserMessage, classifyError } from '@/lib/errors';
 import { enforce, retryAfter, RULES } from '@/lib/rateLimit';
 import { generateReceiptPDF } from '@/lib/receipt';
 import { parseAmountToStroops } from '@/lib/amount';
+import { copyText } from '@/lib/clipboard';
 import { useTransferHistory } from '@/hooks/useTransferHistory';
 import { applySettlement, settlementDurationMs, type SavedTransfer } from '@/lib/transfer-history';
 
@@ -106,28 +107,11 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
 
   const handleCopyHash = async () => {
     if (!txResult) return;
-    let ok = false;
-    try {
-      await navigator.clipboard.writeText(txResult.hash);
-      ok = true;
-    } catch {
-      // Clipboard API blocked (older browser / insecure context) — fall back
-      try {
-        const ta = document.createElement('textarea');
-        ta.value = txResult.hash;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        ok = document.execCommand('copy');
-        document.body.removeChild(ta);
-      } catch {
-        ok = false;
-      }
-    }
+    const ok = await copyText(txResult.hash);
+    if (!mountedRef.current) return;
     if (ok) {
       setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      setTimeout(() => { if (mountedRef.current) setCopied(false); }, 1500);
       toast({
         title: t('copiedTitle'),
         description: `${txResult.hash.slice(0, 12)}…${txResult.hash.slice(-6)}`,
