@@ -44,12 +44,12 @@ export function JisrCopilot() {
     const q = userQuery.toLowerCase();
 
     if (q.includes('save') || q.includes('500') || q.includes('fee') || q.includes('cost')) {
-      const jisrTotal = calculateTotal(CORRIDORS[0], 500);
-      const bankTotal = 500 * (1 + 0.065) + 15;
+      const jisrTotal = calculateTotal(CORRIDORS.find(c => c.isJisr)!, 500);
+      const bankTotal = calculateTotal(CORRIDORS.find(c => c.id === 'bank-wire')!, 500);
       const saved = bankTotal - jisrTotal;
       return lang === 'en'
-        ? `For a $500 remittance, bank wires cost ~$${bankTotal.toFixed(2)} (6.5% + $15 fee, taking 2 days). Jisr-Pay costs only $${jisrTotal.toFixed(2)} (0.4% flat fee, settling in ~5 seconds). You save $${saved.toFixed(2)} on every transfer!`
-        : `لتحويل 500 دولار، تكلف الحوالات البنكية حوالي ${bankTotal.toFixed(2)}$ (رسوم 6.5% + 15$ وتستغرق يومين). بينما تكلف جسر باي ${jisrTotal.toFixed(2)}$ فقط (رسوم 0.4% وتكتمل في 5 ثوانٍ). توفر ${saved.toFixed(2)}$ في كل تحويل!`;
+        ? `In the illustrative $500 example, bank-wire fees are $${bankTotal.toFixed(2)} and Jisr fees are $${jisrTotal.toFixed(2)}, a fee difference of $${saved.toFixed(2)}. These are fixed demo estimates, not live quotes. Actual payments use test XLM without currency conversion.`
+        : `في المثال التوضيحي لمبلغ 500 دولار، تبلغ رسوم البنك ${bankTotal.toFixed(2)}$ ورسوم جسر ${jisrTotal.toFixed(2)}$، بفارق ${saved.toFixed(2)}$. هذه تقديرات تجريبية وليست أسعاراً مباشرة. المدفوعات تستخدم XLM التجريبي دون تحويل العملات.`;
     }
 
     if (q.includes('agent') || q.includes('rate-scout') || q.includes('router') || q.includes('reconciler') || q.includes('how')) {
@@ -153,7 +153,7 @@ export function JisrCopilot() {
                   <h3 className="text-sm font-extrabold text-foreground flex items-center gap-1.5">
                     Jisr Copilot <span className="text-[10px] font-mono text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-bold">AI</span>
                   </h3>
-                  <p className="text-[11px] text-muted-foreground">Remittance Intelligence</p>
+                  <p className="text-xs text-muted-foreground">Remittance Intelligence</p>
                 </div>
               </div>
 
@@ -172,7 +172,7 @@ export function JisrCopilot() {
                   key={m.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`flex gap-2.5 ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex gap-3 ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   {m.sender === 'ai' && (
                     <div className="w-6 h-6 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-1">
@@ -188,7 +188,7 @@ export function JisrCopilot() {
                     }`}
                   >
                     {m.text}
-                    <span className="block text-[9px] opacity-60 text-end mt-1 font-mono">{m.timestamp}</span>
+                    <span className="block text-[10px] opacity-60 text-end mt-1 font-mono">{m.timestamp}</span>
                   </div>
 
                   {m.sender === 'user' && (
