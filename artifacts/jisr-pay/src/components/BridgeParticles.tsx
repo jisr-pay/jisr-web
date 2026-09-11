@@ -101,9 +101,7 @@ export function BridgeParticles({
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
-          count={count}
-          array={livePositions}
-          itemSize={3}
+          args={[livePositions, 3]}
         />
       </bufferGeometry>
       <pointsMaterial
