@@ -27,6 +27,11 @@ export async function fetchSettlement(
       typeof tx.created_at !== 'string' || !Number.isFinite(Date.parse(tx.created_at))) {
     throw new AppError('NETWORK', 'The network returned an invalid confirmation.');
   }
+  // A confirmation dated far in the future is malformed, not evidence of
+  // settlement. Small clock skew is normal, so allow a few minutes.
+  if (Date.parse(tx.created_at) > Date.now() + 5 * 60_000) {
+    throw new AppError('NETWORK', 'The network returned an invalid confirmation.');
+  }
   const fee = BigInt(tx.fee_charged);
   return { hash, successful: tx.successful, ledger: tx.ledger,
     createdAt: tx.created_at,
