@@ -1,12 +1,17 @@
+import { lazy, Suspense } from 'react';
 import { useI18nContext } from '@/contexts/I18nContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { StoryLandingSection } from '@/components/StoryLandingSection';
-import { HeroScene } from '@/components/HeroScene';
 import { HowItWorks } from '@/components/HowItWorks';
 import { Globe, ArrowRight, Zap, Shield, Globe2 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { CORRIDORS, calculateTotal, formatSpeed } from '@/lib/corridors';
 import { motion } from 'framer-motion';
+
+// The 3D story scene (three.js + react-three-fiber) is the heaviest part of
+// the app — load it as its own chunk so first paint stays fast.
+const StoryLandingSection = lazy(() =>
+  import('@/components/StoryLandingSection').then((m) => ({ default: m.StoryLandingSection })),
+);
 
 const DEMO_AMOUNT = 500;
 
@@ -80,31 +85,33 @@ export default function Landing() {
       <main className="flex-1 flex flex-col w-full">
 
         {/* ── 6-Beat 3D Fly-Through Story Runway ── */}
-        <StoryLandingSection scrollHeightVh={600} />
+        <Suspense fallback={<div className="h-screen bg-background" aria-hidden="true" />}>
+          <StoryLandingSection scrollHeightVh={600} />
+        </Suspense>
 
         {/* ── Features Strip ── */}
         <section id="features" className="w-full py-20 px-6 bg-muted/40 border-y border-border/50">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-4">{t('navFeatures')}</h2>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-4">{t('featuresTitle')}</h2>
             <p className="text-center text-muted-foreground mb-12 max-w-xl mx-auto">
               {t('heroSubtitle')}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
+              {              [
                 {
                   icon: <Zap className="w-7 h-7 text-primary" />,
-                  title: 'AI-Routed',
-                  body: 'Three autonomous agents — Rate-Scout, Router, Reconciler — work in sequence to find the optimal path and settle on-chain in seconds.',
+                  title: t('featureRoutedTitle'),
+                  body: t('featureRoutedBody'),
                 },
                 {
                   icon: <Shield className="w-7 h-7 text-amber-500" />,
-                  title: 'Blockchain-Settled',
-                  body: 'Every payment lands on the public Stellar ledger. No trusted intermediaries. No hidden fees. Independently verifiable by anyone.',
+                  title: t('featureChainTitle'),
+                  body: t('featureChainBody'),
                 },
                 {
                   icon: <Globe2 className="w-7 h-7 text-emerald-500" />,
-                  title: 'Gulf \u2194 Africa',
-                  body: 'Built for real corridors: AED\u2192NGN, SAR\u2192KES, KWD\u2192GHS, QAR\u2192ETB. 0.4% flat fee vs. up to 6.5% + $15 for traditional wires.',
+                  title: t('featureCorridorsTitle'),
+                  body: t('featureCorridorsBody'),
                 },
               ].map(({ icon, title, body }) => (
                 <motion.div
@@ -134,12 +141,12 @@ export default function Landing() {
         {/* ── Corridors Comparison ── */}
         <section id="corridors" className="w-full py-20 px-6 bg-muted/40">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-3">{t('navCorridors')}</h2>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-4">{t('navCorridors')}</h2>
             <p className="text-center text-muted-foreground mb-10">
-              Sending ${DEMO_AMOUNT} \u2014 Jisr vs. the alternatives
+              {t('corridorsSubtitle')}
             </p>
-            <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xl">
-              <table className="w-full text-sm">
+            <div className="bg-card border border-border rounded-2xl shadow-xl overflow-x-auto">
+              <table className="w-full text-sm min-w-[36rem]">
                 <thead className="bg-muted text-muted-foreground border-b border-border">
                   <tr>
                     <th className="py-3 px-5 text-start font-medium">{t('provider')}</th>
@@ -190,7 +197,7 @@ export default function Landing() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="w-full border-t border-border py-8 px-6 bg-card flex flex-col md:flex-row items-center justify-between gap-4">
+      <footer className="w-full border-t border-border py-8 px-6 pb-24 bg-card flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M4 18C4 18 6 8 12 8C18 8 20 18 20 18" stroke="#7c3aed" strokeWidth="2.5" strokeLinecap="round"/>
@@ -202,10 +209,10 @@ export default function Landing() {
         </div>
         <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          Stellar Testnet \u2014 live
+          {t('testnetLive')}
         </div>
-        <div className="text-xs text-muted-foreground/60">
-          \u00a9 {new Date().getFullYear()} Jisr Pay. MIT License.
+        <div className="text-xs text-muted-foreground">
+          © {new Date().getFullYear()} Jisr Pay. {t('mitLicense')}
         </div>
       </footer>
     </div>
