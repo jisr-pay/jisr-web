@@ -51,6 +51,23 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, 'dist/public'),
     emptyOutDir: true,
+    // vendor-three is a consciously accepted ~1.15 MB minified (325 kB gzip);
+    // the default 500 kB limit would warn on it forever.
+    chunkSizeWarningLimit: 1300,
+    rollupOptions: {
+      output: {
+        // Keep the heaviest libraries in dedicated chunks so app-code edits
+        // don't invalidate their cache entries and no single chunk trips the
+        // size warning. three is only needed by the landing scene; jspdf only
+        // for receipts (already lazy, this keeps its chunk stable).
+        manualChunks(id: string) {
+          if (id.includes('/node_modules/three/') || id.includes('/node_modules/@react-three/')) {
+            return 'vendor-three';
+          }
+          if (id.includes('/node_modules/jspdf/')) return 'vendor-jspdf';
+        },
+      },
+    },
   },
   server: {
     port,
