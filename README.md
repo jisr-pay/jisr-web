@@ -15,6 +15,10 @@ Jisr Pay is a hackathon fintech demo for Gulf-to-Africa remittances. Its three-s
 | **Freighter Wallet** | Native browser-extension wallet connect; graceful fallback for mobile |
 | **Corridor Comparison** | Illustrative fee/speed table with percentage and fixed charges; not a live quote |
 | **English / Arabic** | Full i18n with RTL layout mirroring, IBM Plex Sans Arabic, `dir` switching |
+| **PDF Receipts** | Branded `jspdf` receipt with hash, addresses, fee and savings for every confirmed transfer |
+| **Transfer History & Recovery** | Per-browser journal of signed transfers; pending transfers can be re-checked without re-signing |
+| **Light / Dark Theme** | Semantic design tokens across both themes, user-switchable and persisted |
+| **Jisr Copilot** | Floating assistant answering preset questions about fees, agents and corridors (canned responses, not a live LLM) |
 | **3D Hero** | `react-three-fiber` metallic torus-arc scene with mouse-hover radial reveal |
 | **Confetti Settlement** | `canvas-confetti` burst on transaction confirmation |
 
@@ -41,8 +45,11 @@ payments in the dashboard use native Testnet XLM between Stellar accounts.
 - **Blockchain** — `@stellar/stellar-sdk` (Horizon API)
 - **Styling** — Tailwind CSS v4, light/dark themes
 - **i18n** — Custom `useI18n()` hook with EN/AR dictionary
-- **Animations** — `canvas-confetti`
-- **Router** — `wouter`
+- **Fonts** — Plus Jakarta Sans (Latin), IBM Plex Sans Arabic (RTL)
+- **2D animation** — `framer-motion` (scroll story, section transitions)
+- **Receipts** — `jspdf` branded PDF receipts for confirmed transfers
+- **Local history** — per-browser transfer journal with recovery (see below)
+- **Rate limiting & errors** — client-side request pacing and typed error mapping (`lib/rateLimit.ts`, `lib/errors.ts`)
 
 ---
 
@@ -156,14 +163,17 @@ artifacts/jisr-pay/
 
 ## 🎨 Design System
 
-| Token | Value | Use |
+The app styles through **semantic HSL design tokens** declared in `src/index.css`, with a complete light and dark palette switched by `next-themes` and the `ThemeToggle`. Components consume tokens (`bg-background`, `text-foreground`, `border-border`, …) rather than raw hex values, so both themes stay consistent. A `.dark` block redefines each token; there is no dark-only hardcoding.
+
+Dark-theme reference values (the light theme is defined alongside in `index.css`):
+
+| Token | Dark value | Use |
 |---|---|---|
-| Background | `#0a0a0f` | App background |
-| Primary | `#7c3aed` | Violet — brand, buttons, accents |
-| Primary Light | `#a78bfa` | Hover states, highlights |
-| Gold | `#f59e0b` | Savings moments only |
-| Surface | `#13131a` | Cards, inputs |
-| Border | `#1e1e2e` | Dividers |
+| `--background` | `#0a0a0f` near-black | App background |
+| `--primary` | `#7c3aed` violet | Brand, buttons, accents |
+| `--card` | `#111118` | Cards, inputs |
+| `--border` | muted violet-grey | Dividers |
+| `--card-border` | violet glow | Card emphasis |
 
 Fonts: **Plus Jakarta Sans** (Latin) · **IBM Plex Sans Arabic** (RTL)
 
@@ -182,6 +192,7 @@ Toggle between English and Arabic using the **عربي / EN** button in the nav.
 - [x] Freighter wallet connect
 - [x] EN/AR bilingual + RTL
 - [x] 3D hero scene
+- [x] PDF receipts and local transfer history with recovery
 - [ ] Capacitor wrapper (Android / iOS)
 - [ ] Mainnet deployment with KYC flow
 - [ ] Real-time exchange rate feeds
