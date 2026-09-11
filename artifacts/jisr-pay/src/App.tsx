@@ -8,6 +8,7 @@ import Landing from '@/pages/Landing';
 import { I18nProvider, useI18nContext } from '@/contexts/I18nContext';
 import { JisrCopilot } from '@/components/JisrCopilot';
 import { RootErrorBoundary } from '@/components/RootErrorBoundary';
+import { ChunkLoadRecovery } from '@/components/ChunkLoadRecovery';
 import { createLogger } from '@/lib/logger';
 
 import { ThemeProvider } from 'next-themes';
@@ -58,6 +59,7 @@ function App() {
                 <Router />
               </WouterRouter>
               <JisrCopilot />
+              <ChunkLoadRecovery />
               <Toaster />
             </TooltipProvider>
           </I18nProvider>
