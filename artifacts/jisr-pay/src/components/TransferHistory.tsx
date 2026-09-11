@@ -29,7 +29,7 @@ export function TransferHistory({ walletKey }: { walletKey: string | null }) {
       const updated = applySettlement(record, settlement);
       try { recordTransfer(updated); } catch { throw new Error(t('historySaveWarning')); }
       if (download && updated.status === 'confirmed') {
-        generateReceiptPDF({ amount: updated.amount, currency: updated.asset,
+        await generateReceiptPDF({ amount: updated.amount, currency: updated.asset,
           recipient: updated.recipient, txHash: updated.hash, feePaid: updated.feePaid!,
           contractId: updated.contractId, timestamp: new Date(updated.confirmedAt!),
           settlementTimeSec: settlementDurationMs(updated) / 1000,

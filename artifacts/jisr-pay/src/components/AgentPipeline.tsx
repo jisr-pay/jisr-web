@@ -72,6 +72,8 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
   // Error state — every failure in the pipeline surfaces here
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
+  const downloadingReceiptRef = useRef(false);
 
   // Refs for cleanup: the scan interval and a mounted flag so we never call
   // setState after the component unmounts (React warning + leaked timers).
@@ -139,9 +141,12 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
     }
   };
 
-  const handleDownloadReceipt = () => {
-    if (!txResult) return;
-    generateReceiptPDF({
+  const handleDownloadReceipt = async () => {
+    if (!txResult || step !== 'done' || downloadingReceiptRef.current) return;
+    downloadingReceiptRef.current = true;
+    setIsDownloadingReceipt(true);
+    try {
+    await generateReceiptPDF({
       amount,
       currency,
       recipient: resolvedKey ?? recipient,
@@ -152,6 +157,12 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
       timestamp: new Date(txResult.createdAt ?? Date.now()),
     });
     toast({ title: t('receiptDownloaded'), description: `jisr-pay-receipt-${txResult.hash.slice(0, 8)}.pdf` });
+    } catch (error) {
+      showError(error);
+    } finally {
+      downloadingReceiptRef.current = false;
+      if (mountedRef.current) setIsDownloadingReceipt(false);
+    }
   };
 
   useEffect(() => {
@@ -754,6 +765,8 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                           </button>
                           <button
                             onClick={handleDownloadReceipt}
+                            disabled={isDownloadingReceipt}
+                            aria-busy={isDownloadingReceipt}
                             className="flex-1 inline-flex items-center justify-center gap-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-medium py-3 px-6 rounded-lg transition-all"
                           >
                             <Download className="w-4 h-4" />
