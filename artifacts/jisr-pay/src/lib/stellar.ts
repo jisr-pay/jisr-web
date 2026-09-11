@@ -109,7 +109,7 @@ export async function resolveFederation(address: string): Promise<string> {
     let res: Response;
     try {
       res = await withRetry('federation', () =>
-        fetch(`${FEDERATION_API_BASE}/federation?q=${encodeURIComponent(input)}`, {
+        fetch(`${FEDERATION_API_BASE()}/federation?q=${encodeURIComponent(input)}`, {
           signal: AbortSignal.timeout(10_000),
         }),
       );
@@ -171,7 +171,7 @@ export async function buildAndSubmitPayment(
   amountXLM: string,
   callbacks: PaymentCallbacks,
 ): Promise<TransactionResult> {
-  const server = new rpc.Server(SOROBAN_RPC_URL);
+  const server = new rpc.Server(SOROBAN_RPC_URL());
 
   // Validate the amount before anything network-related.
   const stroops = parseAmountToStroops(amountXLM);
@@ -195,7 +195,7 @@ export async function buildAndSubmitPayment(
     );
   }
 
-  const contract = new Contract(CONTRACT_ID);
+  const contract = new Contract(CONTRACT_ID());
   const transaction = new TransactionBuilder(account, {
     fee: BASE_FEE,
     networkPassphrase: Networks.TESTNET,
@@ -205,8 +205,8 @@ export async function buildAndSubmitPayment(
         'route_payment',
         Address.fromString(senderKey).toScVal(),
         Address.fromString(recipientKey).toScVal(),
-        Address.fromString(TREASURY_ADDRESS).toScVal(),
-        Address.fromString(TOKEN_ADDRESS).toScVal(),
+        Address.fromString(TREASURY_ADDRESS()).toScVal(),
+        Address.fromString(TOKEN_ADDRESS()).toScVal(),
         nativeToScVal(stroops, { type: 'i128' }),
       ),
     )
@@ -308,7 +308,7 @@ export interface SettlementRecord {
 
 /** One bounded read; history checks never sign or resubmit a transaction. */
 export async function lookupSettlement(hash: string): Promise<SettlementRecord | null> {
-  return fetchSettlement(HORIZON_URL, hash);
+  return fetchSettlement(HORIZON_URL(), hash);
 }
 
 // Polls Horizon for the confirmed transaction and returns the real on-chain

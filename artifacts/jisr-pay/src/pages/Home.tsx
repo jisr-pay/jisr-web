@@ -114,7 +114,7 @@ export default function Home() {
           {t('poweredByStellar')}
         </div>
         <div className="text-muted-foreground text-xs font-mono">
-          {t('contractAddress')}: {CONTRACT_ID.slice(0, 10)}…{CONTRACT_ID.slice(-6)}
+          {t('contractAddress')}: {CONTRACT_ID().slice(0, 10)}…{CONTRACT_ID().slice(-6)}
         </div>
         <div className="text-xs text-muted-foreground">
           © {new Date().getFullYear()} Jisr Pay.
