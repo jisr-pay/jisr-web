@@ -6,7 +6,7 @@
 // mashing a button. This enforces both a minimum gap between actions and a
 // maximum number of actions per rolling window, per named action.
 
-import { AppError } from './errors';
+import { AppError } from './errors.ts';
 
 interface RateLimitRule {
   /** Minimum milliseconds between two consecutive actions. */
@@ -18,10 +18,16 @@ interface RateLimitRule {
 
 const history: Record<string, number[]> = {};
 
+// Indirection over the wall clock so tests can simulate elapsed time.
+let clock: () => number = Date.now;
+export function setClock(now: () => number): void {
+  clock = now;
+}
+
 // Returns the number of ms the caller must wait, or 0 if the action is allowed
 // right now. Does NOT record the action — call `record` once you actually run it.
 export function retryAfter(action: string, rule: RateLimitRule): number {
-  const now = Date.now();
+  const now = clock();
   const times = (history[action] ?? []).filter((t) => now - t < rule.windowMs);
   history[action] = times;
 
@@ -37,7 +43,7 @@ export function retryAfter(action: string, rule: RateLimitRule): number {
 }
 
 export function record(action: string): void {
-  (history[action] ??= []).push(Date.now());
+  (history[action] ??= []).push(clock());
 }
 
 // Convenience: throws a RATE_LIMITED AppError if the action isn't allowed yet,
@@ -47,7 +53,7 @@ export function enforce(action: string, rule: RateLimitRule): void {
   if (wait > 0) {
     throw new AppError(
       'RATE_LIMITED',
-      `Please wait ${Math.ceil(wait / 1000)}s before trying again.`,
+      `Too many attempts in a short time. Please wait ${Math.ceil(wait / 1000)}s before trying again.`,
     );
   }
   record(action);
