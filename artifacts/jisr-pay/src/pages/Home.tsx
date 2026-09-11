@@ -8,7 +8,7 @@ import { connectFreighter } from '@/lib/stellar';
 import { CONTRACT_ID } from '@/lib/corridors';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
-import { toUserMessage } from '@/lib/errors';
+import { toUserMessage } from '@workspace/jisr-sdk';
 
 export default function Home() {
   const { t, lang, toggleLang, isRTL } = useI18nContext();

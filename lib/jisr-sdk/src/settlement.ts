@@ -1,6 +1,8 @@
 import { AppError } from './errors.ts';
 import type { TransferSettlement } from './transfer-history.ts';
 
+export type { TransferSettlement };
+
 /** Read-only lookup; 404 means unknown, not failed. Never broadcasts a transaction. */
 export async function fetchSettlement(
   horizonUrl: string,

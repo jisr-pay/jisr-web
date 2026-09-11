@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "test": "pnpm --filter @workspace/jisr-pay test",
+    "test": "pnpm -r --if-present run test",
     "dev": "pnpm --filter @workspace/jisr-pay run dev",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",

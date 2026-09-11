@@ -20,6 +20,8 @@ jisr-pay/
 │   ├── api-server/          # Express scaffold — NOT used by the frontend, no real routes
 │   └── mockup-sandbox/      # Replit design-preview sandbox, unrelated to the shipped app
 ├── lib/                     # Shared workspace packages
+│   ├── jisr-sdk/            # Reusable Stellar payment primitives + tests (wallet-free,
+│   │                        #   Node-compatible; see lib/jisr-sdk/README.md)
 │   ├── api-spec/            # OpenAPI 3.1 spec (health check only)
 │   ├── api-zod/             # Zod types generated from api-spec
 │   ├── api-client-react/    # React Query hooks generated from api-spec
@@ -125,45 +127,29 @@ artifacts/jisr-pay/src/
 │   └── useScrollProgress.ts    # Scroll-position → [0,1] progress ref, drives the story scroll scene
 │
 └── lib/
-    ├── corridors.ts            # Corridor data (bank wire/cash pickup/mobile money/Jisr-Stellar),
-    │                            #   fee math, and the real Stellar constants: CONTRACT_ID,
-    │                            #   TREASURY_ADDRESS, TOKEN_ADDRESS, FEDERATION_API_BASE,
-    │                            #   SOROBAN_RPC_URL, HORIZON_URL, NETWORK_PASSPHRASE (testnet)
-    ├── stellar.ts               # Real payment flow — NO mocked transactions:
+    ├── network-config.ts        # App-side shim: Vite import.meta.env → SDK resolveNetworkConfig;
+    │                            #   lazy CONTRACT_ID/HORIZON_URL/… accessors (only env access)
+    ├── stellar.ts               # Freighter wallet adapter over @workspace/jisr-sdk:
     │                            #   - connectFreighter/detectWalletEnvironment via
     │                            #     @stellar/freighter-api (requestAccess, direct-on-click)
     │                            #   - resolveFederation: real stellar-tags federation API call,
     │                            #     throws (no fallback wallet) if unresolved
-    │                            #   - buildAndSubmitPayment: invokes route_payment on the
-    │                            #     deployed Soroban contract (prepare/sign/send/confirm),
-    │                            #     validates amount, checks network, retries transient
-    │                            #     failures with backoff
+    │                            #   - buildAndSubmitFreighterPayment: SDK payment flow with the
+    │                            #     Freighter signer injected as the SDK's PaymentWallet port
     │                            #   - pollSettlement: polls Horizon for the confirmed tx,
     │                            #     throws on-chain failure rather than reporting fake success
     ├── receipt.ts               # generateReceiptPDF() — branded PDF receipt via jsPDF: tx hash,
     │                            #   addresses, fee, savings vs. bank wire, contract ID.
     │                            #   Platform specifics live in receipt-impl.ts. Triggered from
     │                            #   AgentPipeline's Payment Complete card and transfer history.
-    ├── settlement.ts            # checkConfirmation(): the only path to a "confirmed" state —
-    │                            #   reconciles an already-broadcast transaction against the
-    │                            #   network; never fabricates success for an unknown outcome
-    ├── transfer-history.ts      # Per-browser journal (localStorage) of signed transfers: hash and
-    │                            #   details are saved BEFORE broadcast (saving failure stops the
-    │                            #   send), pending transfers can be re-checked without re-signing
-    ├── amount.ts                # Payment amount parsing/validation shared by form and pipeline
+    ├── corridors.ts             # Corridor comparison data + fee math (illustrative USD examples)
     ├── clipboard.ts             # Clipboard write with manual fallback for restricted contexts
-    ├── network-config.ts        # Env-driven Stellar constants; hard-rejects non-Testnet
-    │                            #   passphrases, non-XLM tokens, and non-HTTPS endpoints
-    ├── errors.ts                # Classifies raw SDK/Freighter/fetch errors into typed codes
-    │                            #   (USER_REJECTED, WALLET_LOCKED, WRONG_NETWORK, NOT_FUNDED,
-    │                            #   RECIPIENT_NOT_FOUND, DIRECTORY_UNAVAILABLE, NETWORK,
-    │                            #   RATE_LIMITED, TIMEOUT, CONTRACT_FAILED) → user-facing messages
-    ├── rateLimit.ts             # Client-side per-action min-gap + rolling-window limiter
-    │                            #   (findRoute, submitPayment) — no backend to rate-limit against
-    ├── logger.ts                # createLogger(scope) — leveled logger, debug/info suppressed
-    │                            #   in production builds
     ├── i18n.ts                  # EN/AR string dictionary + useI18n() hook (localStorage-persisted)
     └── utils.ts                 # cn() Tailwind class merge helper
+
+Amount parsing, typed errors, the transfer journal, settlement lookups, network
+config validation, rate limiting and logging (with their tests) moved into
+`lib/jisr-sdk` — the app imports them from `@workspace/jisr-sdk`.
 ```
 
 ### Routing (`App.tsx`)
@@ -265,6 +251,9 @@ applied before these numbers ever reach the chain).
 | `docs/EDGE_CASES.md` | Every edge case in the payment flow (wallet, amount, federation, network, lifecycle) and exactly how it's handled — pairs with `lib/errors.ts` / `lib/rateLimit.ts` |
 | `docs/OPERATIONS_AUDIT.md` | Operational audit separating verified behavior from illustrative claims |
 | `docs/TESTING.md` | What the automated regression suite covers, its limits, and the manual Testnet acceptance procedure |
+| `docs/SDK_PUBLISH_RUNBOOK.md` | Record + push procedure for publishing `jisr-sdk` with history preserved (scratch-clone filter rewrite) |
+| `docs/RENAME_CHECKLIST.md` | `jisr-pay` → `jisr-web` GitHub rename checklist (run after the SDK repo is published) |
+| `docs/API_HANDOFF.md` | Backend handoff for Codex: SDK consumption surface, acceptance-criteria mapping, schema + OpenAPI draft |
 | `SUBMISSION.md` | Hackathon submission pitch: problem, 3-agent architecture, key features, tech stack |
 | `DEMO_SCRIPT.md` | Timestamped script for a 2-minute demo video |
 | `MARKETING_STRATEGY.md` | Go-to-market strategy — business doc, not implementation detail |
