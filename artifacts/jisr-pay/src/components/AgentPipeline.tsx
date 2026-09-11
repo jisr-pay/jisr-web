@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowRight, Activity, AlertCircle,
-  CheckCircle, Loader2, Copy, ExternalLink, ChevronDown, Check,
+  CheckCircle, Loader2, Copy, ExternalLink, Check,
   RefreshCw, History, Download
 } from 'lucide-react';
 import { useI18nContext } from '@/contexts/I18nContext';
@@ -16,12 +16,14 @@ import {
   buildAndSubmitPayment, pollSettlement, TransactionResult
 } from '@/lib/stellar';
 import { createLogger } from '@/lib/logger';
-import { toUserMessage } from '@/lib/errors';
+import { toUserMessage, classifyError } from '@/lib/errors';
 import { enforce, retryAfter, RULES } from '@/lib/rateLimit';
 import { generateReceiptPDF } from '@/lib/receipt';
+import { parseAmountToStroops } from '@/lib/amount';
+import { useTransferHistory } from '@/hooks/useTransferHistory';
+import { applySettlement, settlementDurationMs, type SavedTransfer } from '@/lib/transfer-history';
 
 const log = createLogger('pipeline');
-import confetti from 'canvas-confetti';
 
 type Step = 'idle' | 'step1' | 'step2' | 'step3' | 'done';
 
@@ -35,10 +37,12 @@ interface AgentPipelineProps {
 export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: AgentPipelineProps = {}) {
   const { t, isRTL } = useI18nContext();
   const { toast } = useToast();
+  const { transfers, recordTransfer, unavailable: historyUnavailable } = useTransferHistory();
+  const activeTransferRef = useRef<SavedTransfer | null>(null);
 
   const [step, setStep] = useState<Step>('idle');
   const [amount, setAmount] = useState<string>('');
-  const [currency, setCurrency] = useState('USD');
+  const currency = 'XLM';
   const [recipient, setRecipient] = useState<string>('');
   
   // Step 1 state
@@ -53,7 +57,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
   const [walletStatus, setWalletStatus] = useState<'freighter' | 'mobile' | 'none'>('none');
   // Use external wallet key from dashboard if provided, fall back to internal state.
   const [internalSenderKey, setInternalSenderKey] = useState<string | null>(null);
-  const senderKey = externalWalletKey ?? internalSenderKey;
+  const senderKey = externalWalletKey !== undefined ? externalWalletKey : internalSenderKey;
   const setSenderKey = (key: string | null) => {
     setInternalSenderKey(key);
     onWalletChange?.(key);
@@ -73,6 +77,9 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
   // setState after the component unmounts (React warning + leaked timers).
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
+  const operationRef = useRef(0);
+  const submittingRef = useRef(false);
+  const submittedAtRef = useRef(0);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -86,6 +93,13 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
     const msg = toUserMessage(e);
     log.error('Pipeline error', e);
     if (mountedRef.current) setError(msg);
+  };
+
+  const saveResult = (record: SavedTransfer) => {
+    activeTransferRef.current = record;
+    try { recordTransfer(record); } catch {
+      toast({ title: t('historySaveWarning'), variant: 'destructive' });
+    }
   };
 
   const handleCopyHash = async () => {
@@ -113,13 +127,13 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
       toast({
-        title: 'Transaction hash copied',
+        title: t('copiedTitle'),
         description: `${txResult.hash.slice(0, 12)}…${txResult.hash.slice(-6)}`,
       });
     } else {
       toast({
-        title: 'Could not copy automatically',
-        description: 'Select the hash and copy it manually.',
+        title: t('copiedFallbackTitle'),
+        description: t('copiedFallbackDesc'),
         variant: 'destructive',
       });
     }
@@ -134,12 +148,10 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
       txHash: txResult.hash,
       feePaid: txResult.feePaid,
       settlementTimeSec: txResult.settlementTimeMs / 1000,
-      savingsAmount,
-      savingsPercent,
       contractId: CONTRACT_ID,
-      timestamp: new Date(),
+      timestamp: new Date(txResult.createdAt ?? Date.now()),
     });
-    toast({ title: 'Receipt downloaded', description: `jisr-pay-receipt-${txResult.hash.slice(0, 8)}.pdf` });
+    toast({ title: t('receiptDownloaded'), description: `jisr-pay-receipt-${txResult.hash.slice(0, 8)}.pdf` });
   };
 
   useEffect(() => {
@@ -149,7 +161,13 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
   const handleStart = () => {
     const value = Number(amount);
     if (!amount || !recipient.trim() || !Number.isFinite(value) || value <= 0) {
-      setError('Enter an amount greater than zero and a recipient.');
+      setError(t('validationAmount'));
+      return;
+    }
+    try {
+      parseAmountToStroops(amount);
+    } catch (e) {
+      showError(e);
       return;
     }
     // Client-side rate limit — don't let repeated clicks spam the scan.
@@ -159,6 +177,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
       return;
     }
     enforce('findRoute', RULES.findRoute);
+    const operation = ++operationRef.current;
 
     setError(null);
     setStep('step1');
@@ -174,7 +193,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
     // read a stale, out-of-range value and push undefined.
     let index = 0;
     scanIntervalRef.current = setInterval(() => {
-      if (!mountedRef.current) {
+      if (!mountedRef.current || operation !== operationRef.current) {
         if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
         return;
       }
@@ -187,13 +206,14 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
       } else {
         if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
         setTimeout(() => {
-          if (mountedRef.current) setIsScanning(false);
+          if (mountedRef.current && operation === operationRef.current) setIsScanning(false);
         }, 500);
       }
     }, 400);
   };
 
   const handleStep1Proceed = async () => {
+    const operation = ++operationRef.current;
     setError(null);
     setStep('step2');
     setIsResolving(true);
@@ -202,17 +222,20 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
     try {
       key = await resolveFederation(recipient);
     } catch (e) {
+      if (!mountedRef.current || operation !== operationRef.current) return;
       setIsResolving(false);
       showError(e);
       setStep('idle');
       return;
     }
+    if (!mountedRef.current || operation !== operationRef.current) return;
     setResolvedKey(key);
     setIsResolving(false);
 
     setIsBuilding(true);
     // Brief UI transition before showing the transaction card
     setTimeout(() => {
+      if (!mountedRef.current || operation !== operationRef.current) return;
       setIsBuilding(false);
       setTxBuilt(true);
     }, 800);
@@ -230,7 +253,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
 
   const handleSubmitTx = async () => {
     if (!senderKey || !resolvedKey) return;
-    if (isSubmitting) return; // guard against double-submit
+    if (submittingRef.current) return;
     // Rate limit real payments — expensive and irreversible.
     const wait = retryAfter('submitPayment', RULES.submitPayment);
     if (wait > 0) {
@@ -240,33 +263,88 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
     enforce('submitPayment', RULES.submitPayment);
 
     setError(null);
+    submittingRef.current = true;
+    submittedAtRef.current = Date.now();
     setIsSubmitting(true);
     try {
-      const result = await buildAndSubmitPayment(senderKey, resolvedKey, amount);
-      if (!mountedRef.current) return;
-      setTxResult(result);
-      setStep('step3');
-      setIsPolling(true);
-      setSettlementStatus('awaitingSettlement');
+      const result = await buildAndSubmitPayment(senderKey, resolvedKey, amount, {
+        onPending: (pending) => {
+          const record: SavedTransfer = {
+            hash: pending.hash, network: 'TESTNET', asset: 'XLM', sender: senderKey,
+            recipient: resolvedKey, amount: amount.trim(), contractId: CONTRACT_ID,
+            submittedAt: new Date().toISOString(), status: 'pending',
+          };
+          // A failed save stops broadcast before the signed transaction is sent.
+          try { recordTransfer(record); } catch { throw new Error(t('historySaveBlocked')); }
+          activeTransferRef.current = record;
+          if (!mountedRef.current) return;
+          setTxResult(pending);
+          setStep('step3');
+          setIsPolling(true);
+        },
+        onFailed: (hash) => {
+          if (activeTransferRef.current?.hash === hash) saveResult({ ...activeTransferRef.current, status: 'failed' });
+        },
+      });
+      if (mountedRef.current) {
+        setTxResult(result);
+        setStep('step3');
+        setIsPolling(true);
+        setSettlementStatus('awaitingSettlement');
+      }
 
       const settled = await pollSettlement(result.hash, setSettlementStatus);
+      if (activeTransferRef.current) saveResult(applySettlement(activeTransferRef.current, settled));
       if (!mountedRef.current) return;
       // Replace optimistic values with the confirmed on-chain fee and ledger
       setTxResult(prev =>
-        prev ? { ...prev, feePaid: settled.feeCharged, ledger: settled.ledger } : prev,
+        prev ? { ...prev, feePaid: settled.feeCharged, ledger: settled.ledger, createdAt: settled.createdAt } : prev,
       );
       setIsPolling(false);
       setStep('done');
       triggerConfetti();
     } catch (e) {
+      if (activeTransferRef.current && classifyError(e) === 'CONTRACT_FAILED') {
+        saveResult({ ...activeTransferRef.current, status: 'failed' });
+      }
       if (!mountedRef.current) return;
       showError(e);
       setIsSubmitting(false);
       setIsPolling(false);
+    } finally {
+      submittingRef.current = false;
+      if (mountedRef.current) setIsSubmitting(false);
+    }
+  };
+
+  const handleRetrySettlement = async () => {
+    if (!txResult || submittingRef.current) return;
+    submittingRef.current = true;
+    setIsPolling(true);
+    setError(null);
+    try {
+      const settled = await pollSettlement(txResult.hash, setSettlementStatus);
+      if (activeTransferRef.current) saveResult(applySettlement(activeTransferRef.current, settled));
+      if (!mountedRef.current) return;
+      setTxResult({ ...txResult, feePaid: settled.feeCharged, ledger: settled.ledger, createdAt: settled.createdAt,
+        settlementTimeMs: activeTransferRef.current ? settlementDurationMs(activeTransferRef.current) : txResult.settlementTimeMs });
+      setStep('done');
+      triggerConfetti();
+    } catch (e) {
+      if (activeTransferRef.current && classifyError(e) === 'CONTRACT_FAILED') {
+        saveResult({ ...activeTransferRef.current, status: 'failed' });
+      }
+      showError(e);
+    } finally {
+      submittingRef.current = false;
+      if (mountedRef.current) setIsPolling(false);
     }
   };
 
   const resetPipeline = () => {
+    if (submittingRef.current) return;
+    operationRef.current++;
+    activeTransferRef.current = null;
     if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
     setStep('idle');
     setAmount('');
@@ -279,11 +357,16 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
     setIsPolling(false);
     setScannedCorridors([]);
     setIsScanning(false);
+    setIsResolving(false);
+    setIsBuilding(false);
     // Keep senderKey so the user stays "connected" for the next payment.
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const triggerConfetti = () => {
+  // Confetti is lazy-loaded: canvas-confetti only downloads when a payment
+  // actually settles, keeping it out of the initial bundle.
+  const triggerConfetti = async () => {
+    const confetti = (await import('canvas-confetti')).default;
     const duration = 3 * 1000;
     const end = Date.now() + duration;
 
@@ -312,13 +395,20 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
 
   const bestCorridor = getBestCorridor(CORRIDORS);
   const worstCorridor = CORRIDORS.find(c => c.id === 'bank-wire');
-  const numAmount = Number(amount) || 0;
+  // Marketing comparison is a separate USD example, not an XLM exchange quote.
+  const numAmount = 500;
   const savingsAmount = worstCorridor ? calculateTotal(worstCorridor, numAmount) - calculateTotal(bestCorridor, numAmount) : 0;
   const savingsPercent = worstCorridor ? (savingsAmount / calculateTotal(worstCorridor, numAmount)) * 100 : 0;
 
   return (
     <div className="w-full max-w-4xl mx-auto py-8 px-4 relative z-20">
       <div className="flex flex-col gap-6">
+        {historyUnavailable && <p role="alert" className="text-sm text-destructive">{t('historySaveBlocked')}</p>}
+        {step === 'idle' && transfers.some(record => record.status === 'pending' && (!senderKey || record.sender === senderKey)) && (
+          <p role="status" className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
+            {t('historyPendingNotice')} <a href="#transfer-history" className="font-semibold underline">{t('viewHistory')}</a>
+          </p>
+        )}
 
         <AnimatePresence>
           {error && (
@@ -335,22 +425,27 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                 onClick={() => setError(null)}
                 className="text-destructive/70 hover:text-destructive transition-colors text-sm font-medium"
               >
-                Dismiss
+                {t('dismiss')}
               </button>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Send Form (Always visible or transitions out?) The prompt says "Send form (shown in idle state)", implying it might stay or collapse, but let's keep it as the top header once active. */}
+        <p className="text-sm text-muted-foreground">
+          {t('testnetNotice')}
+        </p>
         <motion.div 
           layout
           className="bg-card/90 backdrop-blur-xl border border-border p-6 rounded-2xl shadow-xl flex flex-col md:flex-row gap-4 items-end"
         >
           <div className="w-full md:w-1/3 flex flex-col gap-2">
-            <label className="text-sm text-muted-foreground font-medium">{t('sendAmount')}</label>
+            <label htmlFor="transfer-amount" className="text-sm text-muted-foreground font-medium">{t('sendAmount')}</label>
             <div className="relative">
               <input 
-                type="number" 
+                id="transfer-amount"
+                type="number"
+                min="0.0000001"
+                step="0.0000001"
                 value={amount}
                 onChange={e => setAmount(e.target.value)}
                 disabled={step !== 'idle'}
@@ -358,28 +453,19 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                 placeholder="0.00"
               />
               <div className="absolute top-1 bottom-1 end-1 flex items-center">
-                <select 
-                  value={currency}
-                  onChange={e => setCurrency(e.target.value)}
-                  disabled={step !== 'idle'}
-                  className="bg-transparent border-none text-sm font-medium focus:ring-0 cursor-pointer disabled:opacity-50 pe-8 appearance-none"
-                >
-                  <option value="USD">USD</option>
-                  <option value="AED">AED</option>
-                  <option value="KES">KES</option>
-                  <option value="NGN">NGN</option>
-                </select>
-                <div className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2">
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                </div>
+                <span className="px-3 text-sm font-medium">{currency}</span>
               </div>
             </div>
           </div>
           
           <div className="w-full md:w-1/2 flex flex-col gap-2">
-            <label className="text-sm text-muted-foreground font-medium">{t('recipientAddress')}</label>
+            <label htmlFor="transfer-recipient" className="text-sm text-muted-foreground font-medium">{t('recipientAddress')}</label>
             <input 
-              type="text" 
+              id="transfer-recipient"
+              type="text"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               value={recipient}
               onChange={e => setRecipient(e.target.value)}
               disabled={step !== 'idle'}
@@ -400,9 +486,10 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
             ) : (
               <button 
                 onClick={resetPipeline}
+                disabled={isSubmitting || isPolling}
                 className="w-full md:w-auto bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium py-3 px-6 rounded-lg transition-all"
               >
-                Reset
+                {t('reset')}
               </button>
             )}
           </div>
@@ -422,23 +509,24 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                 isComplete={step === 'step2' || step === 'step3' || step === 'done'}
               >
                 <div className="flex flex-col gap-4 pt-4">
+                  <p className="text-sm text-muted-foreground">{t('scanTableNotice')}</p>
                   <div className="flex items-center gap-3 mb-2">
                     {isScanning ? (
-                      <><Activity className="w-5 h-5 text-amber-500 animate-pulse" /><span className="text-amber-500 font-medium">{t('scanning')}</span></>
+                      <><Activity className="w-5 h-5 text-primary animate-pulse" /><span className="text-primary font-medium">{t('scanning')}</span></>
                     ) : (
                       <><CheckCircle className="w-5 h-5 text-emerald-500" /><span className="text-emerald-500 font-medium">{t('bestRoute')}</span></>
                     )}
                   </div>
                   
-                  <div className="bg-card border border-border rounded-xl overflow-hidden shadow-inner relative">
+                  <div className="bg-card border border-border rounded-xl overflow-x-auto shadow-inner relative">
                     {isScanning && (
                       <motion.div 
                         className="absolute inset-0 bg-primary/5 z-10 pointer-events-none"
                         animate={{ x: ['-100%', '100%'] }}
-                        transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                        transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
                       />
                     )}
-                    <table className="w-full text-sm text-start">
+                    <table className="w-full text-sm text-start min-w-[36rem]">
                       <thead className="bg-muted text-muted-foreground border-b border-border">
                         <tr>
                           <th className="py-3 px-4 font-medium">{t('provider')}</th>
@@ -461,7 +549,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                               >
                                 <td className="py-4 px-4 flex items-center gap-2">
                                   <span className={`font-medium ${isWinner ? 'text-primary' : 'text-foreground'}`}>{t(c.nameKey)}</span>
-                                  {isWinner && <span className="bg-amber-500/20 text-amber-500 text-xs px-2 py-0.5 rounded-full font-bold uppercase hidden md:inline-block">Best Route</span>}
+                                  {isWinner && <span className="bg-amber-500/20 text-amber-500 text-xs px-2 py-0.5 rounded-full font-bold uppercase hidden md:inline-block">{t('bestRouteBadge')}</span>}
                                 </td>
                                 <td className="py-4 px-4 text-muted-foreground">{c.feePercent}% {c.feeFixed > 0 ? `+ $${c.feeFixed}` : ''}</td>
                                 <td className="py-4 px-4 text-muted-foreground">{formatSpeed(c.speedMinutes)}</td>
@@ -480,14 +568,14 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                     <div className="flex flex-col md:flex-row items-center justify-between mt-4 gap-4">
                       <div className="text-amber-500 font-medium flex items-center gap-2">
                         <Activity className="w-5 h-5" />
-                        Save ${savingsAmount.toFixed(2)} ({savingsPercent.toFixed(0)}%) vs. Bank Wire
+                        {t('save')} ${savingsAmount.toFixed(2)} ({savingsPercent.toFixed(0)}%) {t('vsBankWire')}
                       </div>
                       {step === 'step1' && (
                         <button 
                           onClick={handleStep1Proceed}
-                          className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-6 rounded-lg transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(124,58,237,0.3)]"
+                          className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(124,58,237,0.3)]"
                         >
-                          Proceed with Jisr Stellar route <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
+                          {t('proceedRoute')} <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
                         </button>
                       )}
                     </div>
@@ -507,7 +595,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                   <div className="flex flex-col gap-5 pt-4">
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center gap-3">
-                        {isResolving ? <Loader2 className="w-5 h-5 animate-spin text-amber-500" /> : <CheckCircle className="w-5 h-5 text-emerald-500" />}
+                        {isResolving ? <Loader2 className="w-5 h-5 animate-spin text-primary" /> : <CheckCircle className="w-5 h-5 text-emerald-500" />}
                         <span className={isResolving ? 'text-amber-500' : 'text-emerald-500'}>{t('resolvingFederation')}</span>
                       </div>
                       {resolvedKey && (
@@ -518,7 +606,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
 
                       {!isResolving && (
                         <div className="flex items-center gap-3 mt-2">
-                          {isBuilding ? <Loader2 className="w-5 h-5 animate-spin text-amber-500" /> : <CheckCircle className="w-5 h-5 text-emerald-500" />}
+                          {isBuilding ? <Loader2 className="w-5 h-5 animate-spin text-primary" /> : <CheckCircle className="w-5 h-5 text-emerald-500" />}
                           <span className={isBuilding ? 'text-amber-500' : 'text-emerald-500'}>{t('buildingTx')}</span>
                         </div>
                       )}
@@ -529,6 +617,14 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                           animate={{ opacity: 1, height: 'auto' }}
                           className="bg-card border border-border rounded-xl p-5 ms-8 flex flex-col gap-4 mt-2 shadow-inner"
                         >
+                          <h3 className="text-lg font-semibold">{t('reviewTransfer')}</h3>
+                          <dl className="grid gap-3 text-sm">
+                            <div><dt className="text-muted-foreground">{t('sendAmount')}</dt><dd className="text-2xl font-bold" dir="ltr">{amount} XLM</dd></div>
+                            <div><dt className="text-muted-foreground">{t('transferNetwork')}</dt><dd>Stellar Testnet</dd></div>
+                            <div><dt className="text-muted-foreground">{t('transferFrom')}</dt><dd className="font-mono break-all" dir="ltr">{senderKey ?? t('connectWallet')}</dd></div>
+                            <div><dt className="text-muted-foreground">{t('transferTo')}</dt><dd className="font-mono break-all" dir="ltr">{resolvedKey}</dd></div>
+                          </dl>
+                          <p className="text-sm text-muted-foreground">{t('reviewTransferHelp')}</p>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <span className="text-xs text-muted-foreground block mb-1">{t('contractAddress')}</span>
@@ -536,7 +632,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                             </div>
                             <div>
                               <span className="text-xs text-muted-foreground block mb-1">{t('fee')}</span>
-                              <span className="text-sm font-medium">0.4% (~${(numAmount * 0.004).toFixed(2)})</span>
+                              <span className="text-sm font-medium">Review the transaction and network fee in Freighter</span>
                             </div>
                             <div>
                               <span className="text-xs text-muted-foreground block mb-1">Est. {t('speed')}</span>
@@ -547,7 +643,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                           <div className="border-t border-border/50 pt-4 mt-2 flex flex-col md:flex-row items-center justify-between gap-4">
                             {walletStatus === 'freighter' ? (
                               senderKey ? (
-                                <div className="text-emerald-500 text-sm flex items-center gap-2"><CheckCircle className="w-4 h-4"/> Freighter connected</div>
+                                <div className="text-emerald-500 text-sm flex items-center gap-2"><CheckCircle className="w-4 h-4"/> {t('freighterConnected')}</div>
                               ) : (
                                 <button onClick={handleConnectWallet} className="text-sm bg-secondary hover:bg-secondary/80 px-4 py-2 rounded-lg font-medium transition-colors">
                                   {t('connectWallet')}
@@ -562,10 +658,10 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                             {step === 'step2' && (
                               <button 
                                 onClick={handleSubmitTx}
-                                disabled={(!senderKey && walletStatus === 'freighter') || isSubmitting}
-                                className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-6 rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                disabled={!senderKey || !resolvedKey || walletStatus !== 'freighter' || isSubmitting || historyUnavailable}
+                                className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                               >
-                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sign & Submit'} 
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : t('signTransfer')}
                                 {!isSubmitting && <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />}
                               </button>
                             )}
@@ -589,13 +685,21 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                   <div className="flex flex-col gap-4 pt-4">
                     <div className="flex items-center gap-3 mb-2">
                       {isPolling ? (
-                        <><Activity className="w-5 h-5 text-amber-500 animate-pulse" /><span className="text-amber-500 font-medium">{t('awaitingSettlement')}</span></>
-                      ) : (
+                        <><Activity className="w-5 h-5 text-primary animate-pulse" /><span className="text-primary font-medium">{t('awaitingSettlement')}</span></>
+                      ) : step === 'done' ? (
                         <><CheckCircle className="w-5 h-5 text-emerald-500" /><span className="text-emerald-500 font-medium">{t('settled')}</span></>
+                      ) : (
+                        <span className="text-amber-500">{t('confirmUnavailable')}</span>
                       )}
                     </div>
 
-                    {txResult && !isPolling && (
+                    {txResult && step === 'step3' && (
+                      <div className="flex flex-wrap gap-3 text-sm">
+                        <a href={`https://stellar.expert/explorer/testnet/tx/${txResult.hash}`} target="_blank" rel="noreferrer" className="text-primary underline">{t('viewSubmittedTx')}</a>
+                        {!isPolling && <button onClick={handleRetrySettlement} className="text-primary underline">{t('checkConfirmationAgain')}</button>}
+                      </div>
+                    )}
+                    {txResult && step === 'done' && (
                       <motion.div 
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -607,7 +711,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                         
                         <h3 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
                           <span className="bg-emerald-500/20 text-emerald-500 p-2 rounded-full"><Check className="w-6 h-6" /></span>
-                          Payment Complete
+                          {t('paymentComplete')}
                         </h3>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
@@ -635,8 +739,8 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                           </div>
                           
                           <div className="flex flex-col gap-1">
-                            <span className="text-sm text-muted-foreground">{t('savings')}</span>
-                            <span className="font-bold text-lg text-amber-500">${savingsAmount.toFixed(2)} vs Bank Wire</span>
+                            <span className="text-sm text-muted-foreground">{t('amountSubmitted')}</span>
+                            <span className="font-bold text-lg">{amount} XLM (Testnet)</span>
                           </div>
                         </div>
 
@@ -657,9 +761,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                           </button>
                           {senderKey && (
                             <a
-                              href={`https://stellar.expert/explorer/testnet/account/${senderKey}`}
-                              target="_blank"
-                              rel="noreferrer"
+                              href="#transfer-history"
                               className="flex-1 inline-flex items-center justify-center gap-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium py-3 px-6 rounded-lg transition-all"
                             >
                               <History className="w-4 h-4" />
@@ -693,7 +795,7 @@ function AgentCard({
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-2xl transition-all duration-500 overflow-hidden ${statusColor} backdrop-blur-sm relative`}
+      className={`rounded-2xl transition-[border-color,box-shadow,background-color] duration-300 overflow-hidden ${statusColor} backdrop-blur-sm relative`}
     >
       <div className="p-5 md:p-6 flex flex-col">
         <div className="flex items-start gap-4">
@@ -703,7 +805,7 @@ function AgentCard({
           <div className="flex-1">
             <h3 className="text-lg font-bold text-foreground flex items-center gap-3">
               {name}
-              {isActive && <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />}
+              {isActive && <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />}
               {isComplete && <span className="w-2 h-2 rounded-full bg-emerald-500" />}
             </h3>
             <p className="text-sm text-muted-foreground mt-1">{desc}</p>

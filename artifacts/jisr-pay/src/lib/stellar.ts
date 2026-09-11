@@ -2,7 +2,6 @@ import {
   Address,
   BASE_FEE,
   Contract,
-  Horizon,
   Networks,
   StrKey,
   TransactionBuilder,
@@ -24,6 +23,8 @@ import {
 } from './corridors';
 import { createLogger } from './logger';
 import { AppError, classifyError } from './errors';
+import { parseAmountToStroops } from './amount';
+import { fetchSettlement } from './settlement';
 
 const log = createLogger('stellar');
 
@@ -51,28 +52,6 @@ async function withRetry<T>(
     }
   }
   throw lastErr;
-}
-
-// Parses a human amount into i128 stroops, rejecting malformed / out-of-range
-// input (non-numeric, <= 0, > 7 decimal places, absurdly large).
-function parseAmountToStroops(amount: string): bigint {
-  const trimmed = amount.trim();
-  const n = Number(trimmed);
-  if (!Number.isFinite(n) || n <= 0) {
-    throw new AppError('UNKNOWN', 'Enter a valid amount greater than zero.');
-  }
-  const decimals = trimmed.includes('.') ? trimmed.split('.')[1] ?? '' : '';
-  if (decimals.length > 7) {
-    throw new AppError('UNKNOWN', 'Amount can have at most 7 decimal places.');
-  }
-  const stroops = BigInt(Math.round(n * 10_000_000));
-  if (stroops <= 0n) {
-    throw new AppError('UNKNOWN', 'Amount must be greater than zero.');
-  }
-  if (stroops > 900_000_000_000_000_000n) {
-    throw new AppError('UNKNOWN', 'Amount is too large.');
-  }
-  return stroops;
 }
 
 // Best-effort guard: if Freighter is on a non-testnet network the payment would
@@ -130,7 +109,9 @@ export async function resolveFederation(address: string): Promise<string> {
     let res: Response;
     try {
       res = await withRetry('federation', () =>
-        fetch(`${FEDERATION_API_BASE}/federation?q=${encodeURIComponent(input)}`),
+        fetch(`${FEDERATION_API_BASE}/federation?q=${encodeURIComponent(input)}`, {
+          signal: AbortSignal.timeout(10_000),
+        }),
       );
     } catch (e) {
       log.error('Federation request failed', e);
@@ -140,6 +121,10 @@ export async function resolveFederation(address: string): Promise<string> {
       );
     }
     if (res.status === 404) {
+      const body = await res.text();
+      if (body.includes('Application not found')) {
+        throw new AppError('DIRECTORY_UNAVAILABLE', 'The recipient directory is offline. Paste a Stellar public key instead.');
+      }
       throw new AppError('RECIPIENT_NOT_FOUND', `Recipient "${input}" not found in the federation directory`);
     }
     if (!res.ok) {
@@ -165,9 +150,16 @@ export async function resolveFederation(address: string): Promise<string> {
 
 export interface TransactionResult {
   hash: string;
+  createdAt?: string;
   feePaid: string;
   settlementTimeMs: number;
   ledger: number;
+}
+
+export interface PaymentCallbacks {
+  /** Must complete before broadcast; a storage error prevents sending. */
+  onPending: (result: TransactionResult) => void;
+  onFailed: (hash: string) => void;
 }
 
 // Invokes route_payment(sender, recipient, platform_treasury, token_address, amount)
@@ -177,6 +169,7 @@ export async function buildAndSubmitPayment(
   senderKey: string,
   recipientKey: string,
   amountXLM: string,
+  callbacks: PaymentCallbacks,
 ): Promise<TransactionResult> {
   const server = new rpc.Server(SOROBAN_RPC_URL);
 
@@ -193,7 +186,7 @@ export async function buildAndSubmitPayment(
     account = await withRetry('getAccount', () => server.getAccount(senderKey));
   } catch (e) {
     const code = classifyError(e);
-    if (code === 'NETWORK' || code === 'RATE_LIMITED') {
+    if (code === 'NETWORK' || code === 'RATE_LIMITED' || code === 'TIMEOUT') {
       throw e; // surfaced as a friendly network message upstream
     }
     throw new AppError(
@@ -244,14 +237,35 @@ export async function buildAndSubmitPayment(
   );
 
   const start = Date.now();
+  const pending = {
+    hash: signedTx.hash().toString('hex'),
+    feePaid: `${(Number(prepared.fee) / 10_000_000).toFixed(7)} XLM`,
+    settlementTimeMs: 0,
+    ledger: 0,
+  };
+  // Journal the signed hash before the request. A reload or lost response
+  // must leave a recoverable transfer, even if broadcast is interrupted.
+  callbacks.onPending(pending);
   log.info('Submitting to Soroban RPC');
-  const sendResponse = await server.sendTransaction(signedTx);
+  let sendResponse;
+  try {
+    sendResponse = await server.sendTransaction(signedTx);
+  } catch {
+    // A lost response does not prove rejection. Preserve the signed hash so
+    // confirmation can be retried without submitting a second payment.
+    throw new AppError('TIMEOUT', 'Submission response unavailable. Check the transaction before sending again.');
+  }
   if (sendResponse.status === 'ERROR') {
+    callbacks.onFailed(pending.hash);
     log.error('Soroban RPC rejected transaction', sendResponse);
     throw new AppError(
       'CONTRACT_FAILED',
       `Transaction rejected by Soroban RPC (hash ${sendResponse.hash})`,
     );
+  }
+  if (sendResponse.status === 'TRY_AGAIN_LATER') {
+    callbacks.onFailed(pending.hash);
+    throw new AppError('RATE_LIMITED', 'Stellar could not accept the transaction yet. Please try again shortly.');
   }
 
   let getResponse = await server.getTransaction(sendResponse.hash);
@@ -264,6 +278,7 @@ export async function buildAndSubmitPayment(
     getResponse = await server.getTransaction(sendResponse.hash);
   }
   if (getResponse.status === rpc.Api.GetTransactionStatus.FAILED) {
+    callbacks.onFailed(pending.hash);
     log.error('Transaction failed on-chain', { hash: sendResponse.hash });
     throw new AppError('CONTRACT_FAILED', `Transaction ${sendResponse.hash} failed on-chain`);
   }
@@ -291,37 +306,42 @@ export interface SettlementRecord {
   createdAt: string;
 }
 
+/** One bounded read; history checks never sign or resubmit a transaction. */
+export async function lookupSettlement(hash: string): Promise<SettlementRecord | null> {
+  return fetchSettlement(HORIZON_URL, hash);
+}
+
 // Polls Horizon for the confirmed transaction and returns the real on-chain
 // fee and ledger. Throws if the transaction failed or never appears.
 export async function pollSettlement(
   hash: string,
   onUpdate: (status: string) => void,
 ): Promise<SettlementRecord> {
-  const server = new Horizon.Server(HORIZON_URL);
   let attempts = 0;
+  const deadline = Date.now() + 30_000;
 
-  while (attempts < 30) {
+  while (attempts < 30 && Date.now() < deadline) {
     let tx;
     try {
-      tx = await server.transactions().transaction(hash).call();
+      tx = await lookupSettlement(hash);
     } catch {
       onUpdate('awaitingSettlement');
       await new Promise((r) => setTimeout(r, 1000));
       attempts++;
       continue;
     }
-    if (tx.successful === false) {
-      throw new AppError('CONTRACT_FAILED', `Transaction ${hash} failed on-chain (ledger ${tx.ledger_attr})`);
+    if (!tx) {
+      onUpdate('awaitingSettlement');
+      await new Promise((r) => setTimeout(r, 1000));
+      attempts++;
+      continue;
     }
-    log.info('Settlement confirmed on Horizon', { hash: tx.hash, ledger: tx.ledger_attr });
+    if (tx.successful === false) {
+      throw new AppError('CONTRACT_FAILED', `Transaction ${hash} failed on-chain (ledger ${tx.ledger})`);
+    }
+    log.info('Settlement confirmed on Horizon', { hash: tx.hash, ledger: tx.ledger });
     onUpdate('settled');
-    return {
-      hash: tx.hash,
-      successful: true,
-      feeCharged: `${(Number(tx.fee_charged) / 10_000_000).toFixed(7)} XLM`,
-      ledger: tx.ledger_attr,
-      createdAt: tx.created_at,
-    };
+    return tx;
   }
   throw new AppError('TIMEOUT', 'Settlement timeout — transaction not yet found on Horizon. It may still confirm; check the explorer.');
 }
