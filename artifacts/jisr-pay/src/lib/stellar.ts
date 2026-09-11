@@ -20,11 +20,11 @@ import {
   SOROBAN_RPC_URL,
   TOKEN_ADDRESS,
   TREASURY_ADDRESS,
-} from './corridors';
-import { createLogger } from './logger';
-import { AppError, classifyError } from './errors';
-import { parseAmountToStroops } from './amount';
-import { fetchSettlement } from './settlement';
+} from './corridors.ts';
+import { createLogger } from './logger.ts';
+import { AppError, classifyError } from './errors.ts';
+import { parseAmountToStroops } from './amount.ts';
+import { fetchSettlement } from './settlement.ts';
 
 const log = createLogger('stellar');
 
