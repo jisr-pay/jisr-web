@@ -1,14 +1,7 @@
 import { resolveNetworkConfig } from './network-config';
 
-export interface Corridor {
-  id: string;
-  nameKey: 'bankWire' | 'cashPickup' | 'mobileMoney' | 'jisrStellar';
-  feePercent: number;         // e.g. 6.5 = 6.5%
-  feeFixed: number;           // fixed USD fee on top
-  speedMinutes: number;       // min settlement time
-  method: string;
-  isJisr: boolean;
-}
+import type { Corridor } from './fees';
+export { calculateTotal, getBestCorridor, type Corridor } from './fees';
 
 export const CORRIDORS: Corridor[] = [
   {
@@ -49,21 +42,11 @@ export const CORRIDORS: Corridor[] = [
   },
 ];
 
-export function calculateTotal(corridor: Corridor, amount: number): number {
-  return amount * (corridor.feePercent / 100) + corridor.feeFixed;
-}
-
 export function formatSpeed(minutes: number): string {
   if (minutes < 1) return `~${Math.round(minutes * 60)}s`;
   if (minutes < 60) return `${minutes}min`;
   if (minutes < 1440) return `${Math.round(minutes / 60)}hr`;
   return `${Math.round(minutes / 1440)}d`;
-}
-
-export function getBestCorridor(corridors: Corridor[]): Corridor {
-  return corridors.reduce((best, c) => 
-    c.feePercent < best.feePercent ? c : best
-  );
 }
 
 // Signing, saved history and receipts consistently target native Testnet XLM.
