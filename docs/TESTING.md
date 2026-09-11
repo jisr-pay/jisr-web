@@ -14,11 +14,15 @@ future-dated confirmations), Testnet configuration, clipboard failures,
 total-fee comparisons, EN/AR dictionary parity, error classification —
 exhaustively over every code with dedicated friendly copy — rate-limit windows,
 corridor fee/speed claims, and the pure receipt payload (filename pattern,
-hash and recipient truncation, settlement-time formatting). Network responses
-in these tests are mocked. Tests never request a wallet signature or send XLM.
+hash and recipient truncation, settlement-time formatting). The reusable
+primitives behind these tests live in `lib/jisr-sdk` (`@workspace/jisr-sdk`)
+and run browser-free under Node; its suite also pins the public export
+surface and verifies the SDK core stays free of Vite, DOM and wallet
+references. Network responses in these tests are mocked. Tests never request
+a wallet signature or send XLM.
 
-The September 11, 2026 local verification passed 53 tests, the frontend
-TypeScript check, and the production Vite build (with the three.js and jsPDF
+The September 11, 2026 local verification passed 56 tests (38 SDK, 18 web),
+the frontend TypeScript check, and the production Vite build (with the three.js and jsPDF
 vendor libraries in dedicated chunks). Earlier local runs could not
 build: the sandbox exports `PORT=0`, which `vite.config.ts` rejects, and the
 same runs misread that as an esbuild subprocess failure. Invoking Vite directly

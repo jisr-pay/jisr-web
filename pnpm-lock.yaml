@@ -288,6 +288,9 @@ importers:
       '@workspace/api-client-react':
         specifier: workspace:*
         version: link:../../lib/api-client-react
+      '@workspace/jisr-sdk':
+        specifier: workspace:*
+        version: link:../../lib/jisr-sdk
       class-variance-authority:
         specifier: 'catalog:'
         version: 0.7.1
@@ -586,6 +589,16 @@ importers:
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
+
+  lib/jisr-sdk:
+    dependencies:
+      '@stellar/stellar-sdk':
+        specifier: ^16.0.1
+        version: 16.0.1
+    devDependencies:
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
 
   scripts:
     devDependencies:

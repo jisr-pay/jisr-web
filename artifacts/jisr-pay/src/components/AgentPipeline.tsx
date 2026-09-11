@@ -13,16 +13,23 @@ import {
 } from '@/lib/corridors';
 import {
   detectWalletEnvironment, connectFreighter, resolveFederation,
-  buildAndSubmitPayment, pollSettlement, TransactionResult
+  buildAndSubmitFreighterPayment, pollSettlement, TransactionResult
 } from '@/lib/stellar';
-import { createLogger } from '@/lib/logger';
-import { toUserMessage, classifyError } from '@/lib/errors';
-import { enforce, retryAfter, RULES } from '@/lib/rateLimit';
-import { generateReceiptPDF, receiptFilename } from '@/lib/receipt';
-import { parseAmountToStroops } from '@/lib/amount';
+import {
+  applySettlement,
+  classifyError,
+  createLogger,
+  enforce,
+  parseAmountToStroops,
+  retryAfter,
+  RULES,
+  settlementDurationMs,
+  toUserMessage,
+  type SavedTransfer,
+} from '@workspace/jisr-sdk';
 import { copyText } from '@/lib/clipboard';
+import { generateReceiptPDF, receiptFilename } from '@/lib/receipt';
 import { useTransferHistory } from '@/hooks/useTransferHistory';
-import { applySettlement, settlementDurationMs, type SavedTransfer } from '@/lib/transfer-history';
 
 const log = createLogger('pipeline');
 
@@ -262,7 +269,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
     submittedAtRef.current = Date.now();
     setIsSubmitting(true);
     try {
-      const result = await buildAndSubmitPayment(senderKey, resolvedKey, amount, {
+      const result = await buildAndSubmitFreighterPayment(senderKey, resolvedKey, amount, {
         onPending: (pending) => {
           const record: SavedTransfer = {
             hash: pending.hash, network: 'TESTNET', asset: 'XLM', sender: senderKey,

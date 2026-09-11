@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/toast';
 import { useI18nContext } from '@/contexts/I18nContext';
-import { createLogger } from '@/lib/logger';
+import { createLogger } from '@workspace/jisr-sdk';
 
 const log = createLogger('chunk-recovery');
 
