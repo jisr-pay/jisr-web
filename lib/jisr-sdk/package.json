@@ -17,7 +17,7 @@
     "./transfer-history": "./src/transfer-history.ts"
   },
   "scripts": {
-    "test": "node --experimental-strip-types --test src/amount.test.ts src/errors.test.ts src/network-config.test.ts src/rateLimit.test.ts src/settlement.test.ts src/transfer-history.test.ts",
+    "test": "node --experimental-strip-types --test src/amount.test.ts src/errors.test.ts src/network-config.test.ts src/rateLimit.test.ts src/settlement.test.ts src/transfer-history.test.ts src/index.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
