@@ -4,6 +4,27 @@ export type Lang = 'en' | 'ar';
 
 export const strings = {
   en: {
+    historyTitle: 'Transfer history',
+    historyPendingNotice: 'You have a transfer awaiting confirmation. Check its status before sending again.',
+    historyLocalNotice: 'Saved on this browser, including transfers awaiting confirmation. Clearing browser data removes this history. No private keys are stored.',
+    historyWalletFilter: 'Showing transfers sent by your connected wallet.',
+    historyEmpty: 'Your transfers will appear here after signing.',
+    historyPending: 'Awaiting confirmation',
+    historyConfirmed: 'Confirmed',
+    historyFailed: 'Failed',
+    historyCheck: 'Check status',
+    historyStillPending: 'No network confirmation yet',
+    historyPendingHelp: 'An interrupted request may still settle. Check this transaction before starting another payment.',
+    historyCheckError: 'Could not update the transfer',
+    historyReceiptReady: 'Receipt downloaded',
+    historySaveBlocked: 'This browser cannot save transfer history. Enable browser storage or use another browser before sending a payment.',
+    historySaveWarning: 'Payment status could not be saved. Keep the transaction hash and check it in the explorer.',
+    reviewTransfer: 'Review your transfer',
+    reviewTransferHelp: 'Check the full recipient address and amount. This sends test XLM; it does not convert or pay out local currency. Review the transaction and fee in Freighter before approving.',
+    transferFrom: 'From',
+    transferTo: 'To',
+    transferNetwork: 'Network',
+    signTransfer: 'Sign and send test XLM',
     // Nav
     appName: 'Jisr Pay',
     connectWallet: 'Connect Wallet',
@@ -93,8 +114,79 @@ export const strings = {
     statVerifyLabel: 'and verifiable',
     whyTitle: 'Why Stellar?',
     whyBody: 'Every payment settles on the public Stellar network in seconds for a fraction of a cent — no correspondent banks, no multi-day delays. Jisr Pay uses a live, deployed Soroban contract, so every settlement is real and independently verifiable on the block explorer.',
+    // Pipeline UI strings (previously hardcoded)
+    reset: 'Reset',
+    dismiss: 'Dismiss',
+    bestRouteBadge: 'Best Route',
+    bestBadge: 'Best',
+    proceedRoute: 'Proceed with Jisr Stellar route',
+    signSubmit: 'Sign & Submit',
+    freighterConnected: 'Freighter connected',
+    paymentComplete: 'Payment Complete',
+    amountSubmitted: 'Amount submitted',
+    testnetNotice: 'Stellar Testnet: send test XLM only. Currency conversion and local-currency payouts are not available.',
+    scanTableNotice: 'Illustrative fees for a separate $500 remittance. These are not live quotes or the fee for your XLM payment.',
+    vsBankWire: 'vs. Bank Wire',
+    save: 'Save',
+    copiedTitle: 'Transaction hash copied',
+    copiedFallbackTitle: 'Could not copy automatically',
+    copiedFallbackDesc: 'Select the hash and copy it manually.',
+    receiptDownloaded: 'Receipt downloaded',
+    confirmUnavailable: 'Confirmation unavailable. Check the existing transaction before sending again.',
+    viewSubmittedTx: 'View submitted transaction',
+    checkConfirmationAgain: 'Check confirmation again',
+    backToHome: 'Back to home',
+    home: 'Home',
+    sendPaymentTitle: 'Send a Payment',
+    sendPaymentSubtitle: 'AI-routed, blockchain-settled. Choose an amount and recipient below.',
+    validationAmount: 'Enter an amount greater than zero and a recipient.',
+    // Features strip (landing)
+    featuresTitle: 'Features',
+    featureRoutedTitle: 'AI-Routed',
+    featureRoutedBody: 'Three autonomous agents — Rate-Scout, Router, Reconciler — work in sequence to find the optimal path and settle on-chain in seconds.',
+    featureChainTitle: 'Blockchain-Settled',
+    featureChainBody: 'Every payment lands on the public Stellar ledger. No trusted intermediaries. No hidden fees. Independently verifiable by anyone.',
+    featureCorridorsTitle: 'Gulf ↔ Africa',
+    featureCorridorsBody: 'Built for real corridors: AED→NGN, SAR→KES, KWD→GHS, QAR→ETB. 0.4% flat fee vs. up to 6.5% + $15 for traditional wires.',
+    corridorsSubtitle: 'Sending $500 — Jisr vs. the alternatives',
+    testnetLive: 'Stellar Testnet — live',
+    mitLicense: 'MIT License.',
+    // 3D story beats
+    beatOldWay: 'The Old Remittance Way',
+    beatFrom: 'From',
+    beatTo: 'To',
+    beatCorridor: 'Corridor',
+    beatFeeFlat: '0.4% flat',
+    beatSettle: '~5 seconds settlement on Stellar',
+    beatAgent1Detail: 'Finds the best live route',
+    beatAgent2Detail: 'Executes via Soroban/Stellar',
+    beatAgent3Detail: 'Confirms settlement, issues receipt',
+    beatCtaTitle: 'Send Your First Transfer',
+    beatCtaSub: 'Autonomous AI Remittance Engine on Stellar',
+    beatCtaButton: 'Initialize Bridge Transfer',
   },
   ar: {
+    historyTitle: 'سجل التحويلات',
+    historyPendingNotice: 'لديك تحويل بانتظار التأكيد. تحقق من حالته قبل الإرسال مجدداً.',
+    historyLocalNotice: 'محفوظ في هذا المتصفح، بما في ذلك التحويلات التي تنتظر التأكيد. يؤدي مسح بيانات المتصفح إلى حذف السجل. لا تُحفظ مفاتيح خاصة.',
+    historyWalletFilter: 'عرض التحويلات المرسلة من محفظتك المتصلة.',
+    historyEmpty: 'ستظهر تحويلاتك هنا بعد التوقيع.',
+    historyPending: 'بانتظار التأكيد',
+    historyConfirmed: 'مؤكد',
+    historyFailed: 'فشل',
+    historyCheck: 'التحقق من الحالة',
+    historyStillPending: 'لا يوجد تأكيد من الشبكة بعد',
+    historyPendingHelp: 'قد تتم تسوية الطلب المنقطع. تحقق من هذه المعاملة قبل بدء دفعة أخرى.',
+    historyCheckError: 'تعذر تحديث التحويل',
+    historyReceiptReady: 'تم تنزيل الإيصال',
+    historySaveBlocked: 'لا يستطيع هذا المتصفح حفظ سجل التحويلات. فعّل تخزين المتصفح أو استخدم متصفحاً آخر قبل إرسال دفعة.',
+    historySaveWarning: 'تعذر حفظ حالة الدفع. احتفظ بمعرّف المعاملة وتحقق منه في المستكشف.',
+    reviewTransfer: 'راجع تحويلك',
+    reviewTransferHelp: 'تحقق من عنوان المستلم الكامل والمبلغ. يتم إرسال XLM تجريبي دون تحويل أو صرف عملة محلية. راجع المعاملة والرسوم في Freighter قبل الموافقة.',
+    transferFrom: 'من',
+    transferTo: 'إلى',
+    transferNetwork: 'الشبكة',
+    signTransfer: 'وقّع وأرسل XLM التجريبي',
     // Nav
     appName: 'جسر باي',
     connectWallet: 'ربط المحفظة',
@@ -184,6 +276,56 @@ export const strings = {
     statVerifyLabel: 'وقابل للتحقق',
     whyTitle: 'لماذا ستيلار؟',
     whyBody: 'كل دفعة تتم تسويتها على شبكة ستيلار العامة خلال ثوانٍ وبجزء بسيط من السنت — بدون بنوك مراسلة، وبدون تأخير لأيام. يستخدم جسر باي عقد سوروبان منشوراً وحياً، لذا كل تسوية حقيقية وقابلة للتحقق بشكل مستقل على مستكشف البلوكتشين.',
+    // Pipeline UI strings (previously hardcoded)
+    reset: 'إعادة تعيين',
+    dismiss: 'تجاهل',
+    bestRouteBadge: 'أفضل طريق',
+    bestBadge: 'الأفضل',
+    proceedRoute: 'المتابعة عبر جسر ستيلار',
+    signSubmit: 'وقّع وأرسل',
+    freighterConnected: 'تم ربط Freighter',
+    paymentComplete: 'اكتملت الدفعة',
+    amountSubmitted: 'المبلغ المرسل',
+    testnetNotice: 'شبكة ستيلار الاختبارية: إرسال XLM تجريبي فقط. لا يتوفر تحويل عملات أو صرف بعملة محلية.',
+    scanTableNotice: 'رسوم توضيحية لتحويل منفصل بقيمة 500 دولار. هذه ليست أسعاراً حية ولا رسوم دفعتك من XLM.',
+    vsBankWire: 'مقارنة بالتحويل البنكي',
+    save: 'وفّر',
+    copiedTitle: 'تم نسخ رمز المعاملة',
+    copiedFallbackTitle: 'تعذر النسخ تلقائياً',
+    copiedFallbackDesc: 'حدد الرمز وانسخه يدوياً.',
+    receiptDownloaded: 'تم تنزيل الإيصال',
+    confirmUnavailable: 'التأكيد غير متوفر. تحقق من المعاملة الحالية قبل الإرسال مرة أخرى.',
+    viewSubmittedTx: 'عرض المعاملة المرسلة',
+    checkConfirmationAgain: 'التحقق من التأكيد مرة أخرى',
+    backToHome: 'العودة للرئيسية',
+    home: 'الرئيسية',
+    sendPaymentTitle: 'إرسال دفعة',
+    sendPaymentSubtitle: 'توجيه بالذكاء الاصطناعي، تسوية على البلوكتشين. اختر المبلغ والمستلم أدناه.',
+    validationAmount: 'أدخل مبلغاً أكبر من صفر والمستلم.',
+    // Features strip (landing)
+    featuresTitle: 'المميزات',
+    featureRoutedTitle: 'توجيه بالذكاء الاصطناعي',
+    featureRoutedBody: 'ثلاثة وكلاء مستقلين — استطلاع الأسعار، الموجّه، المطابق — يعملون بالتتابع لإيجاد المسار الأمثل والتسوية على البلوكتشين خلال ثوانٍ.',
+    featureChainTitle: 'تسوية على البلوكتشين',
+    featureChainBody: 'كل دفعة تُسجَّل على دفتر ستيلار العام. بدون وسطاء موثوقين، بدون رسوم خفية، وقابلة للتحقق من قبل أي شخص.',
+    featureCorridorsTitle: 'الخليج ↔ أفريقيا',
+    featureCorridorsBody: 'مبنية لممرات حقيقية: AED→NGN، SAR→KES، KWD→GHS، QAR→ETB. رسوم ثابتة 0.4% مقابل ما يصل إلى 6.5% + 15$ للتحويلات التقليدية.',
+    corridorsSubtitle: 'إرسال 500$ — جسر مقابل البدائل',
+    testnetLive: 'شبكة ستيلار الاختبارية — مباشر',
+    mitLicense: 'رخصة MIT.',
+    // 3D story beats
+    beatOldWay: 'طريقة التحويل القديمة',
+    beatFrom: 'من',
+    beatTo: 'إلى',
+    beatCorridor: 'الممر',
+    beatFeeFlat: '0.4% ثابتة',
+    beatSettle: 'تسوية خلال ~5 ثوانٍ على ستيلار',
+    beatAgent1Detail: 'يجد أفضل طريق مباشر',
+    beatAgent2Detail: 'ينفذ عبر سوروبان/ستيلار',
+    beatAgent3Detail: 'يؤكد التسوية ويصدر الإيصال',
+    beatCtaTitle: 'أرسل أول تحويل لك',
+    beatCtaSub: 'محرك تحويلات ذكي مستقل على ستيلار',
+    beatCtaButton: 'ابدأ التحويل',
   },
 } as const;
 
@@ -192,12 +334,20 @@ export type StringKey = keyof typeof strings.en;
 export function useI18n() {
   const [lang, setLang] = useState<Lang>(() => {
     if (typeof window === 'undefined') return 'en';
-    return (localStorage.getItem('jisr-lang') as Lang) || 'en';
+    try {
+      return localStorage.getItem('jisr-lang') === 'ar' ? 'ar' : 'en';
+    } catch {
+      return 'en';
+    }
   });
   const t = (key: StringKey): string => strings[lang][key] ?? strings.en[key];
   const toggleLang = () => {
     const next = lang === 'en' ? 'ar' : 'en';
-    localStorage.setItem('jisr-lang', next);
+    try {
+      localStorage.setItem('jisr-lang', next);
+    } catch {
+      // Language switching still works when browser storage is unavailable.
+    }
     setLang(next);
   };
   const isRTL = lang === 'ar';
