@@ -10,10 +10,12 @@ pnpm build
 
 The automated suite covers exact stroop amounts, journal persistence and
 corruption, stale callbacks, settlement response validation, Testnet
-configuration, clipboard failures, and total-fee comparisons. Network responses
-in these tests are mocked. Tests never request a wallet signature or send XLM.
+configuration, clipboard failures, total-fee comparisons, EN/AR dictionary
+parity, error classification and rate-limit windows, and corridor fee/speed
+claims. Network responses in these tests are mocked. Tests never request a
+wallet signature or send XLM.
 
-The September 11, 2026 local verification passed 27 tests and the frontend
+The September 11, 2026 local verification passed 46 tests and the frontend
 TypeScript check. Tests used Node's `--test-isolation=none` because this sandbox
 restricts subprocesses. The production Vite build remains unverified locally:
 esbuild's config loader failed with `spawn EPERM`. A passing typecheck does not
