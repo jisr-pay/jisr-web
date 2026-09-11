@@ -47,3 +47,13 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Local configuration; only documented examples belong in source control.
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Local assistant metadata and backups of rewritten contributor history.
+.freebuff/
+*.bundle
