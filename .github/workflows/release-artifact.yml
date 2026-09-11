@@ -1,0 +1,40 @@
+name: Build and attest frontend artifact
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+      - uses: pnpm/action-setup@v6
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm build
+      - name: Package the built frontend
+        run: tar -czf jisr-pay-frontend.tar.gz -C artifacts/jisr-pay/dist/public .
+      - name: Attest the frontend archive
+        uses: actions/attest@v4
+        with:
+          subject-path: jisr-pay-frontend.tar.gz
+      - name: Upload the frontend archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: jisr-pay-frontend
+          path: jisr-pay-frontend.tar.gz
+          if-no-files-found: error
+          retention-days: 30
