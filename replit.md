@@ -1,6 +1,6 @@
-# [Project name]
+# Jisr Pay
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Gulf-to-Africa remittances on Stellar Testnet: the web app in `artifacts/jisr-pay` compares illustrative corridors and settles native XLM payments via Freighter, with reusable payment primitives in the `@workspace/jisr-sdk` package.
 
 ## Run & Operate
 
