@@ -251,6 +251,9 @@ applied before these numbers ever reach the chain).
 | `docs/EDGE_CASES.md` | Every edge case in the payment flow (wallet, amount, federation, network, lifecycle) and exactly how it's handled — pairs with `lib/errors.ts` / `lib/rateLimit.ts` |
 | `docs/OPERATIONS_AUDIT.md` | Operational audit separating verified behavior from illustrative claims |
 | `docs/TESTING.md` | What the automated regression suite covers, its limits, and the manual Testnet acceptance procedure |
+| `docs/SDK_PUBLISH_RUNBOOK.md` | Record + push procedure for publishing `jisr-sdk` with history preserved (scratch-clone filter rewrite) |
+| `docs/RENAME_CHECKLIST.md` | `jisr-pay` → `jisr-web` GitHub rename checklist (run after the SDK repo is published) |
+| `docs/API_HANDOFF.md` | Backend handoff for Codex: SDK consumption surface, acceptance-criteria mapping, schema + OpenAPI draft |
 | `SUBMISSION.md` | Hackathon submission pitch: problem, 3-agent architecture, key features, tech stack |
 | `DEMO_SCRIPT.md` | Timestamped script for a 2-minute demo video |
 | `MARKETING_STRATEGY.md` | Go-to-market strategy — business doc, not implementation detail |
