@@ -4,9 +4,8 @@ import { useI18nContext } from '@/contexts/I18nContext';
 import { useTransferHistory } from '@/hooks/useTransferHistory';
 import { useToast } from '@/hooks/use-toast';
 import { lookupSettlement } from '@/lib/stellar';
-import { applySettlement, settlementDurationMs, type SavedTransfer } from '@/lib/transfer-history';
+import { applySettlement, settlementDurationMs, toUserMessage, type SavedTransfer } from '@workspace/jisr-sdk';
 import { generateReceiptPDF } from '@/lib/receipt';
-import { toUserMessage } from '@/lib/errors';
 
 export function TransferHistory({ walletKey }: { walletKey: string | null }) {
   const { t, lang } = useI18nContext();

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { HISTORY_KEY, readTransfers, saveTransfer, type SavedTransfer } from '@/lib/transfer-history';
+import { HISTORY_KEY, readTransfers, saveTransfer, type SavedTransfer } from '@workspace/jisr-sdk';
 
 const HISTORY_UPDATED = 'jisr-pay:history-updated';
 
