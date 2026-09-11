@@ -22,13 +22,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}
+      DD_APP_KEY: ${{ secrets.DD_APP_KEY }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
+
+    - name: Explain missing Datadog configuration
+      if: ${{ env.DD_API_KEY == '' || env.DD_APP_KEY == '' }}
+      run: echo "::notice::Datadog tests skipped. Configure DD_API_KEY and DD_APP_KEY repository secrets to enable them."
 
     # Run Synthetic tests within your GitHub workflow.
     # For additional configuration options visit the action within the marketplace: https://github.com/marketplace/actions/datadog-synthetics-ci
     - name: Run Datadog Synthetic tests
+      if: ${{ env.DD_API_KEY != '' && env.DD_APP_KEY != '' }}
       uses: DataDog/synthetics-ci-github-action@87b505388a22005bb8013481e3f73a367b9a53eb # v1.4.0
       with:
         api_key: ${{secrets.DD_API_KEY}}
