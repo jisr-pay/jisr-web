@@ -5,7 +5,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
 import Landing from '@/pages/Landing';
-import { I18nProvider } from '@/contexts/I18nContext';
+import { I18nProvider, useI18nContext } from '@/contexts/I18nContext';
 import { JisrCopilot } from '@/components/JisrCopilot';
 import { RootErrorBoundary } from '@/components/RootErrorBoundary';
 import { createLogger } from '@/lib/logger';
@@ -20,11 +20,12 @@ const queryClient = new QueryClient();
 const log = createLogger('app');
 
 function Router() {
+  const { t } = useI18nContext();
   return (
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/app">
-        <Suspense fallback={<div className="min-h-screen bg-background" aria-hidden="true" />}>
+        <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground" role="status" aria-live="polite">{t('loading')}</div>}>
           <Home />
         </Suspense>
       </Route>
