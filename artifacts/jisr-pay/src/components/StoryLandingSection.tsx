@@ -1,12 +1,27 @@
 import { useRef, useState, type MouseEvent, type CSSProperties } from "react";
 import { StoryScene } from "./StoryScene";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
+import { SceneErrorBoundary } from './HeroScene';
+import { useI18nContext } from '@/contexts/I18nContext';
+import { Link } from 'wouter';
 
 interface StoryLandingSectionProps {
   scrollHeightVh?: number;
 }
 
-export function StoryLandingSection({ scrollHeightVh = 600 }: StoryLandingSectionProps) {
+export function StoryLandingSection(props: StoryLandingSectionProps) {
+  const { t } = useI18nContext();
+  const fallback = (
+    <section className="min-h-[60vh] flex flex-col items-center justify-center gap-6 px-6 text-center bg-gradient-to-br from-background to-primary/20">
+      <h1 className="text-4xl font-bold">{t('heroTitle')}</h1>
+      <p className="max-w-xl text-muted-foreground">{t('heroSubtitle')}</p>
+      <Link href="/app" className="rounded-lg bg-primary px-6 py-3 text-primary-foreground">{t('launchApp')}</Link>
+    </section>
+  );
+  return <SceneErrorBoundary fallback={fallback}><StoryLandingContent {...props} /></SceneErrorBoundary>;
+}
+
+function StoryLandingContent({ scrollHeightVh = 600 }: StoryLandingSectionProps) {
   const containerRef = useRef<HTMLElement | null>(null);
   const progressRef = useScrollProgress(containerRef);
   const [isHovered, setIsHovered] = useState(false);
