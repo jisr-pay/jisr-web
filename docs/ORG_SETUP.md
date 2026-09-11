@@ -1,162 +1,129 @@
-# jisr-pay organization setup checklist
+﻿# Jisr Pay organization and repository setup
 
-Step-by-step plan for moving `OTimileyin/jisr-pay` into a GitHub organization
-and locking `main` down for two people (and their agents) working in parallel.
+This is the setup guide for OTimileyin (Codex) and EthTobi (Freebuff).
+Organization name proposed: `jisr-pay`, subject to GitHub availability.
+All repositories belong to the organization; the lead below owns day-to-day implementation.
 
-Estimated effort: ~20 minutes of clicking plus a few minutes of propagation.
-Everything here is free-tier compatible **as long as the repo stays public**
-(branch protection and rulesets are free on public repos).
+## 1. Repository names and responsibilities
 
-Decide before starting:
+| Final GitHub repository | Lead | What to do now |
+| --- | --- | --- |
+| jisr-pay/jisr-web | EthTobi / Freebuff | Transfer the existing jisr-pay repository; rename to jisr-web after SDK extraction. Do not create an empty duplicate. |
+| jisr-pay/jisr-sdk | EthTobi / Freebuff | Extract into lib/jisr-sdk first, including tests; publish separately after verification. Codex reviews Node/backend compatibility. |
+| jisr-pay/jisr-api | OTimileyin / Codex | Backend, database, durable transfer history and reconciliation. Migrate the existing API scaffold into its own checkout after SDK interfaces stabilize. |
+| jisr-pay/jisr-routing | OTimileyin / Codex | Start inside jisr-api. Create this separate repo when real quote providers and independent releases justify it. |
+| jisr-pay/payment-router-contract | Original source holder; lead pending | Recover original source, tests and deployment evidence before publication. |
 
-- [ ] Org name: **`jisr-pay`** (matches the product; repo keeps the name `jisr-pay`, so the URL becomes `github.com/jisr-pay/jisr-pay`).
-- [ ] Both **OTimileyin** and **EthTobi** become **owners**.
-- [ ] Repo stays **public** through the hackathon cycle.
-- [ ] Merge style for PRs: **Squash and merge** (keeps the `type: subject` convention one-commit-per-PR). Disable merge commits and rebase in repo settings so there's exactly one button.
+Keep documentation with each code repository. No separate jisr-docs repository is planned.
+These are five target repositories, not five immediate funding submissions.
 
----
+## 2. Create the GitHub organization
 
-## 1. Create the organization
+1. Sign into GitHub as OTimileyin.
+2. Open profile picture > Settings > Organizations > New organization.
+3. Choose the Free plan for this public-repository setup.
+4. Enter `jisr-pay` if available, provide a contact email, complete GitHub's ownership/billing prompts accurately, and create the organization. If unavailable, choose an agreed alternative and replace the organization prefix throughout this guide.
+5. Open the organization > People > Invite member. Invite the actual GitHub account `EthTobi` as an Owner, and have that person accept.
+6. Confirm both human accounts appear as owners. Codex and Freebuff are development tools, not additional human owners.
+7. Under organization Settings > Member privileges, use Read as the base permission. Optionally restrict repository creation by ordinary members; owners manage planned repositories.
+8. Review the organization's two-factor authentication settings with both owners.
 
-1. GitHub → profile picture → **Organizations** → **New organization**.
-2. Plan: **Free**. Name: `jisr-pay`. Contact email: either maintainer's.
-3. Invite the other person: Org → **People** → **Invite member** → role **Owner**.
-   - Do not skip this: a transfer into an org where only one of you is owner
-     recreates the single-bottleneck problem the org exists to fix.
-4. In **People → Member privileges**, set:
-   - Base permissions: **Read** (explicit access per-repo keeps it intentional).
-   - Allow members to create repositories: **off** (repos come from the plan in `docs/PLAN.md`, not ad hoc).
-5. Optional but recommended: enable **Two-factor authentication requirement**
-   (Org → Settings → Authentication security).
+Official instructions: https://docs.github.com/en/organizations/collaborating-with-groups-in-organizations/creating-a-new-organization-from-scratch
 
-## 2. Transfer the repository
+## 3. Transfer the existing repository
 
-1. Old repo → **Settings** → General → **Danger Zone** → **Transfer ownership**.
-2. Enter `jisr-pay` as the new owner and confirm by typing the repo name.
-3. What transfers automatically: code, commits and author credit (history is
-   untouched), issues, PRs, stars, watchers, releases, Actions history.
-4. What breaks and needs the steps below: git remotes on local machines,
-   Vercel's GitHub integration, and branch protection (configured in §4 —
-   protection settings do not survive a transfer).
+1. Do not create `jisr-pay/jisr-pay` in advance: the destination must not already contain a repository with that name.
+2. Open `OTimileyin/jisr-pay` > Settings > General > Danger Zone > Transfer ownership.
+3. Select the new organization as owner. Keep the repository name `jisr-pay` during extraction.
+4. Read GitHub's transfer notices, type the requested repository name, and confirm.
+5. Verify that `https://github.com/jisr-pay/jisr-pay` contains the expected code, commits, branches, issues and PRs.
+6. Review repository access and existing branch protection/rulesets after transfer. Do not assume they were removed; plan and organization policy affect available features.
 
-## 3. After the transfer
+GitHub preserves commit information, issues, PRs and associated webhooks/secrets/deploy keys. Old Git URLs redirect, but updating each checkout is recommended:
 
-- [ ] **Local remotes** (both people, every clone):
-      `git remote set-url origin https://github.com/jisr-pay/jisr-pay.git`
-      (GitHub's redirect would keep old URLs working, but fix them anyway —
-      redirects are one rename away from breaking.)
-- [ ] **Actions**: open the Actions tab, confirm the *Build and typecheck*
-      workflow ran on the transfer push. If not, push any commit / open a
-      throwaway PR to trigger it and confirm green before proceeding.
-- [ ] **Vercel**: the project's GitHub webhook pointed at the personal account,
-      so production deploys stop. In Vercel: install/authorize the **GitHub App
-      for the org**, then either transfer the project into an org-scoped Vercel
-      team or create a new project importing `jisr-pay/jisr-pay`. The build is
-      fully driven by `vercel.json` (install, build command, output dir,
-      rewrites, security headers), so the import is click-through. Re-check the
-      production domain afterwards — that URL goes into `SUBMISSION.md`, and
-      once it is stable it should also become the absolute `og:image`/`og:url`
-      base in `index.html` (TODO already noted there).
-- [ ] **Delete the four stale branches** (owner action, now trivial):
-      `git push origin --delete OTimileyin-patch-1 OTimileyin-patch-1-1 claude/repo-state-assessment-27m0lv docs/codebase-index-update`
-      They are stale ancestors; nothing is lost. This closes PLAN item 12.
-- [ ] **Links**: update any absolute URLs in `README.md`, `SUBMISSION.md`,
-      `CODEBASE_INDEX.md` from `OTimileyin/jisr-pay` to `jisr-pay/jisr-pay`.
+```powershell
+git remote set-url origin https://github.com/jisr-pay/jisr-pay.git
+git remote -v
+```
 
-## 4. Branch protection on `main`
+Official transfer behavior and steps: https://docs.github.com/en/repositories/creating-and-managing-repositories/transferring-a-repository
 
-Repo → **Settings** → **Branches** → **Add branch protection rule** → pattern `main`.
+## 4. Verify CI and deployment
 
-- [ ] **Require a pull request before merging** ✓
-      - Required approvals: **1** — i.e. the other person reviews every change.
-      - ✓ **Dismiss stale pull request approvals when new commits are pushed**.
-      - Leave "Require review from Code Owners" **off** until a `CODEOWNERS`
-        file exists; then add `.github/CODEOWNERS` with
-        `* @OTimileyin @EthTobi` and turn it on.
-- [ ] **Require status checks to pass before merging** ✓ → search and select
-      all four matrix checks published by the *Build and typecheck* workflow:
-      - `build (ubuntu-latest, 22.x)`
-      - `build (ubuntu-latest, 24.x)`
-      - `build (windows-latest, 22.x)`
-      - `build (windows-latest, 24.x)`
-      - ✓ **Require branches to be up to date before merging** (kills
-        merge-surprise between two simultaneous workers).
-- [ ] **Require conversation resolution before merging** ✓.
-- [ ] **Do not allow bypassing the above settings** ✓ — otherwise admins can
-      still push to `main` and the protection is decorative. Accept the trade:
-      an emergency fix goes through a PR with an instant self-merge after the
-      other owner's approval.
-- [ ] Leave **unchecked**: "Allow force pushes" and "Allow deletions" (defaults
-      once protection is on).
+1. Check Actions access, repository secrets and organization Actions policies.
+2. Open a small documentation PR to trigger the existing pull-request workflow. A repository transfer itself is not a push event.
+3. Confirm the Build and typecheck matrix passes on Ubuntu and Windows with Node 22 and 24.
+4. Check Vercel's GitHub App access to the organization and the project's connected repository. Reconnect only if necessary; do not assume the transfer broke the webhook or requires a replacement Vercel project.
+5. Verify a preview deployment and the existing production URL, environment variables and domain configuration.
+6. Update absolute repository links in project documentation as needed.
+7. Leave old branch cleanup separate from migration. Inspect current remote branches and preserve any unique work before considering deletion.
 
-Note: GitHub also offers the newer **Rulesets** UI; classic branch protection
-above is the simplest path and does everything needed. If you prefer rulesets,
-map each checkbox 1:1 — the required-check names are identical.
+## 5. Protect main
 
-## 5. The two-person (two-agent) workflow on one shared laptop
+For each code repository once its workflow exists:
 
-Both agents run on the same machine in the same folder: Buffy (Freebuff
-desktop app) and Codex (VS Code + CLI) share **one working tree**. That is
-the main hazard — not push races, but one agent staging, overwriting, or
-branch-switching away the other's uncommitted work.
+1. Open repository Settings > Branches > Add branch protection rule, targeting `main`. A ruleset targeting main is also suitable.
+2. Require a pull request and one approval from the other human contributor.
+3. Dismiss stale approvals after new commits.
+4. Require passing checks; select names from an actual workflow run. The existing workspace matrix should report:
+   - `build (ubuntu-latest, 22.x)`
+   - `build (ubuntu-latest, 24.x)`
+   - `build (windows-latest, 22.x)`
+   - `build (windows-latest, 24.x)`
+5. Require the branch to be up to date and review conversations resolved.
+6. Disable bypass of these requirements, force pushes and branch deletion on main.
+7. Enable squash merging; use the project's `type: subject` PR title convention.
+8. Verify the rule targets main and that a normal PR requires checks and another person's approval. Do not attempt to delete main or push unreviewed production changes as a protection test.
 
-1. **Prefer separate worktrees before parallel sessions.** One directory
-   cannot safely hold two agents' uncommitted work:
+Use each extracted repository's actual checks, rather than requiring workspace checks that it no longer runs. Public repositories support protected branches on GitHub Free; recheck plan support if visibility changes.
 
-   ```sh
-   git worktree add ../jisr-pay-codex feat/<branch>
-   ```
+Reference: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches
 
-   Each worktree checks out its own branch; history stays single-source and
-   nothing uncommitted is ever shared. (Attribution per worktree is possible
-   via `git config extensions.worktreeConfig` + `git config --worktree …`.)
-2. **If working in the shared checkout anyway, serialize.** Only one agent
-   edits at a time. Every agent: run `git status` immediately before and
-   after its own work, commit in small slices staging explicit files only,
-   and never `git add -A`/`.`, never switch branches, never discard anything
-   it did not create.
-3. **Authorship stays honest** (`CONTRIBUTING.md`): agents commit under the
-   human driving them — Buffy's commits are EthTobi's, Codex's are
-   OTimileyin's. If both share one local git config, say who drove the work
-   in the commit body instead of adding trailers.
-4. Branch names follow the commit convention: `feat/…`, `fix/…`, `test/…`,
-   `docs/…`, `chore/…`.
-5. Push branch → open PR → **the other person reviews** → squash-merge with
-   a `type: subject` title. Protection makes this mandatory even on one
-   machine — no direct pushes to `main` from either agent.
-6. Task ownership comes from `docs/PLAN.md` (P2 items 9–12) and the
-   repo-lead table agreed for the org: web + SDK on EthTobi's side, api +
-   routing on OTimileyin's side, contract repo by whoever holds the Soroban
-   source.
-7. Extraction sequencing stays as decided: **finish the `jisr-sdk` workspace
-   extraction before parallel work starts** — it touches every `src/` file
-   and is the one change that must not happen concurrently.
+## 6. Extract the SDK before parallel development
 
-## 6. Verify the setup actually protects you
+1. EthTobi owns the extraction in `lib/jisr-sdk`, its tests, web imports and shared workspace/lockfile changes.
+2. Keep browser wallet behavior separate from Node-compatible primitives, inject network configuration, and keep localization, branded receipts and illustrative comparisons in the web app.
+3. Codex reviews SDK exports for backend use. Existing types include `TransactionResult`, `SavedTransfer` and `TransferSettlement`; do not introduce a duplicate `SettlementRecord` by accident.
+4. Pass regression tests, typechecking, application build and Node import checks before freezing interfaces.
+5. Prepare history-preserving extraction before publishing `jisr-sdk`. A subtree split of a newly populated directory alone does not retain earlier commits at the files' old paths. Inspect the resulting history and contributor attribution before choosing the migration method.
+6. Publish the verified SDK. Create its destination repository empty when importing history: do not initialize a competing README, license or gitignore commit.
+7. Once the extracted package is available to the web build, rename the transferred app repository to `jisr-web` in Settings > General. Update remotes, package references, CI, deployment connections and documentation, then verify the build again.
 
-- [ ] `git push origin main` from a local clone → **must be rejected** (remote: "protected branch hook declined").
-- [ ] Open a trivial PR → all four matrix checks appear and must pass → other owner approves → squash-merge works.
-- [ ] Approve with one account, push a new commit to the same PR → the stale approval is dismissed automatically.
-- [ ] Confirm `git push origin --delete` of any branch is refused on `main` (and stale-branch cleanup in §3 is done before protection matters).
+Detailed interface and backend acceptance criteria: [COLLABORATION_PLAN.md](COLLABORATION_PLAN.md).
 
-## 7. If something goes wrong
+## 7. Create the remaining repositories and separate local folders
 
-- A transfer can be reversed: org → transfer repository back to the personal
-  account (owner action, no history impact).
-- Branch protection can be edited by any org owner at any time — a blocked
-  release is never more than one settings change away.
-- Nothing in this checklist rewrites history or force-pushes; the
-  `contributor-history.bundle` in the repo root remains the offline backup of
-  pre-rebuild history.
+For each repository when its migration is ready:
 
-## 8. Next in sequence (already agreed — see docs/PLAN.md discussion)
+1. Open the organization > Repositories > New repository.
+2. Confirm the owner is the organization and enter the exact name from section 1.
+3. Use Public for the agreed open-source setup. When importing existing history, leave initialization options unchecked.
+4. Import the prepared code/history, add appropriate documentation and licensing, configure CI, then protect main.
+5. In repository Settings > Collaborators and teams, verify both humans have the intended access. Their implementation leads remain as listed above; organization owners already have administrative access.
 
-1. `jisr-sdk` workspace-package extraction with tests moving alongside it
-   (`lib/jisr-sdk`, importing the existing `lib/api-client-react` pattern).
-2. Promote the package to its own repo via `git subtree split` so commits and
-   author credit survive.
-3. Publish the deployed `payment_router` Soroban contract source as the second
-   repo, with its tests.
-4. Then start parallel feature work on stable interfaces
-   (`TransactionResult`, `SettlementRecord`, `TransferSettlement` are the seed
-   of that shared contract).
+The target folder layout on the laptop is:
+
+```text
+jisr-work/
+  jisr-web/                 # EthTobi opens in Freebuff
+  jisr-sdk/                 # EthTobi opens in Freebuff
+  jisr-api/                 # OTimileyin opens in VS Code / Codex
+  jisr-routing/             # Codex, only after its later extraction
+  payment-router-contract/ # Source holder / agreed maintainer
+```
+
+Clone each published repo into its own folder. Creating a GitHub organization does not move or isolate local files automatically. If both people need to edit the same repository concurrently, use separate clones or worktrees for that repository as well.
+
+Until extraction finishes in the existing shared folder, serialize edits and Git operations. Stage only owned files; do not switch branches or discard another person's work. Follow CONTRIBUTING.md for attribution and commits.
+
+## 8. Ready-to-start checklist
+
+- [ ] Organization created and both human owners accepted.
+- [ ] Existing repository transferred, CI and deployment verified.
+- [ ] Main protected with actual passing checks and peer review.
+- [ ] SDK workspace extraction verified, interfaces reviewed, and publication prepared with history intact.
+- [ ] EthTobi opens the web/SDK folders; Codex opens the API folder.
+- [ ] Original contract source and deployment evidence located; contract maintainer named.
+- [ ] Specific Drips round identified before preparing applications or funding splits.
+
+This document describes setup; it does not assert that any GitHub changes have been performed.

@@ -60,8 +60,9 @@ cases that could break the app and how each is handled.
 
 ## Logging
 
-All diagnostics go through a single leveled logger (`lib/logger.ts`). In
-production only `warn`/`error` are emitted; `debug`/`info` are suppressed to keep
-the console clean. A global `error` / `unhandledrejection` listener logs anything
-that escapes React. The logger is the single seam to later forward logs to a
-real sink (e.g. Sentry) without touching call sites.
+All diagnostics go through the SDK logger (`@workspace/jisr-sdk`), whose sink is
+configured in `src/main.tsx`: in production only `warn`/`error` are emitted;
+`debug`/`info` are suppressed to keep the console clean. A global `error` /
+`unhandledrejection` listener logs anything that escapes React. The injectable
+sink is the single seam to later forward logs to a real sink (e.g. Sentry)
+without touching call sites.
