@@ -41,3 +41,40 @@ test('known codes get friendly copy; unknown errors keep their human-readable me
   assert.equal(toUserMessage(new Error('Recipient account does not exist')), 'Recipient account does not exist');
   assert.equal(toUserMessage(undefined), 'Something went wrong. Please try again.');
 });
+
+const FRIENDLY_CODES = [
+  'USER_REJECTED',
+  'WALLET_LOCKED',
+  'WALLET_MISSING',
+  'WRONG_NETWORK',
+  'DIRECTORY_UNAVAILABLE',
+  'NETWORK',
+  'RATE_LIMITED',
+  'TIMEOUT',
+] as const;
+
+const FALLBACK_CODES = [
+  'NOT_FUNDED',
+  'INSUFFICIENT_BALANCE',
+  'RECIPIENT_NOT_FOUND',
+  'CONTRACT_FAILED',
+  'UNKNOWN',
+] as const;
+
+test('every friendly code shows its own copy, never the raw message', () => {
+  for (const code of FRIENDLY_CODES) {
+    const msg = toUserMessage(new AppError(code, 'raw internal detail'));
+    assert.notEqual(msg, 'raw internal detail', `${code} must have friendly copy`);
+    assert.ok(msg.length > 20, `${code} friendly copy should be actionable`);
+  }
+});
+
+test('codes without friendly copy fall back to the thrown message', () => {
+  for (const code of FALLBACK_CODES) {
+    assert.equal(
+      toUserMessage(new AppError(code, 'raw internal detail')),
+      'raw internal detail',
+      `${code} should surface its own human-readable message`,
+    );
+  }
+});

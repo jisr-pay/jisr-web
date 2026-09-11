@@ -5,22 +5,12 @@
  * actually requests a receipt. See receipt-impl.ts for the implementation.
  */
 
-export interface ReceiptData {
-  amount: string;
-  currency: string;
-  recipient: string;
-  txHash: string;
-  feePaid: string;
-  settlementTimeSec: number;
-  contractId: string;
-  timestamp: Date;
-}
+import type { ReceiptData } from './receipt-payload.ts';
 
-/**
- * Lazy loader: downloads the jsPDF chunk on first use, then renders.
- * Keeps the PDF library out of the initial bundle.
- */
+export { type ReceiptData, receiptFilename } from './receipt-payload.ts';
 export async function generateReceiptPDF(data: ReceiptData): Promise<void> {
-  const { generateReceiptPDFImpl } = await import('./receipt-impl');
+  // Explicit .ts on the dynamic import: the node test loader fails on
+  // extensionless relative imports, and Vite handles the extension fine.
+  const { generateReceiptPDFImpl } = await import('./receipt-impl.ts');
   generateReceiptPDFImpl(data);
 }

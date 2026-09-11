@@ -13,17 +13,15 @@
  */
 
 import jsPDF from 'jspdf';
+import {
+  type ReceiptData,
+  receiptFilename,
+  truncateHash,
+  truncateText,
+  settlementSecondsLabel,
+} from './receipt-payload.ts';
 
-export interface ReceiptData {
-  amount: string;
-  currency: string;
-  recipient: string;
-  txHash: string;
-  feePaid: string;
-  settlementTimeSec: number;
-  contractId: string;
-  timestamp: Date;
-}
+export type { ReceiptData };
 
 /* ─── Palette ─────────────────────────────────────── */
 const VIOLET      = [124, 58, 237]  as [number, number, number]; // #7c3aed
@@ -46,10 +44,6 @@ function fillRgb(doc: jsPDF, color: [number, number, number]) {
 }
 function strokeRgb(doc: jsPDF, color: [number, number, number]) {
   return doc.setDrawColor(color[0], color[1], color[2]);
-}
-
-function truncate(str: string, max: number) {
-  return str.length > max ? str.slice(0, max - 3) + '...' : str;
 }
 
 export function generateReceiptPDFImpl(data: ReceiptData): void {
@@ -174,10 +168,10 @@ export function generateReceiptPDFImpl(data: ReceiptData): void {
   const colW = (contentW - cardGap) / 2;
 
   const fields: { label: string; value: string; highlight?: boolean }[] = [
-    { label: 'Transaction Hash', value: `${data.txHash.slice(0, 16)}...${data.txHash.slice(-8)}` },
-    { label: 'Recipient Address', value: truncate(data.recipient, 28) },
+    { label: 'Transaction Hash', value: truncateHash(data.txHash) },
+    { label: 'Recipient Address', value: truncateText(data.recipient, 28) },
     { label: 'Fee Paid', value: data.feePaid },
-    { label: 'Settlement Time', value: `${data.settlementTimeSec.toFixed(1)} seconds` },
+    { label: 'Settlement Time', value: settlementSecondsLabel(data.settlementTimeSec) },
   ];
 
   fields.forEach((field, i) => {
@@ -312,6 +306,6 @@ export function generateReceiptPDFImpl(data: ReceiptData): void {
   /* ══════════════════════════════════════════
      SAVE
   ══════════════════════════════════════════ */
-  const filename = `jisr-pay-receipt-${data.txHash.slice(0, 8)}.pdf`;
+  const filename = receiptFilename(data.txHash);
   doc.save(filename);
 }

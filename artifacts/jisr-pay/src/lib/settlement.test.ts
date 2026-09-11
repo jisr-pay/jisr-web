@@ -42,6 +42,19 @@ test('malformed, incomplete, and wrong-hash responses cannot confirm a payment',
   }
   await assert.rejects(fetchSettlement(url, hash, async () => new Response('invalid json')));
 });
+test('implausible timestamps and non-object bodies are still rejected', async () => {
+  // A created_at far in the future is a malformed confirmation, not evidence
+  // of settlement — even though Date.parse accepts it.
+  const future = new Date('2026-09-11T10:00:05Z');
+  future.setUTCFullYear(future.getUTCFullYear() + 5);
+  await assert.rejects(
+    fetchSettlement(url, hash, respond({ ...confirmed, created_at: future.toISOString() })),
+  );
+  // Non-string booleans and primitives at the top level must not pass.
+  await assert.rejects(fetchSettlement(url, hash, respond({ ...confirmed, successful: 1 })));
+  await assert.rejects(fetchSettlement(url, hash, respond('confirmed')));
+});
+
 test('invalid hashes are rejected before any network access', async () => {
   let called = false;
   await assert.rejects(fetchSettlement(url, '../other', async () => { called = true; return new Response(); }));

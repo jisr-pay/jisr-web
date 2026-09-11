@@ -18,7 +18,7 @@ import {
 import { createLogger } from '@/lib/logger';
 import { toUserMessage, classifyError } from '@/lib/errors';
 import { enforce, retryAfter, RULES } from '@/lib/rateLimit';
-import { generateReceiptPDF } from '@/lib/receipt';
+import { generateReceiptPDF, receiptFilename } from '@/lib/receipt';
 import { parseAmountToStroops } from '@/lib/amount';
 import { copyText } from '@/lib/clipboard';
 import { useTransferHistory } from '@/hooks/useTransferHistory';
@@ -140,7 +140,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
       contractId: CONTRACT_ID(),
       timestamp: new Date(txResult.createdAt ?? Date.now()),
     });
-    toast({ title: t('receiptDownloaded'), description: `jisr-pay-receipt-${txResult.hash.slice(0, 8)}.pdf` });
+    toast({ title: t('receiptDownloaded'), description: receiptFilename(txResult.hash) });
     } catch (error) {
       showError(error);
     } finally {
