@@ -47,8 +47,8 @@ Jisr Pay is a hackathon fintech demo that reimagines cross-border remittances fo
 
 ### Prerequisites
 
-- Node.js 20+
-- pnpm 9+
+- Node.js 22.13+ (Node.js 24 recommended)
+- pnpm 11.8.0 (the version pinned in `package.json`)
 
 ### Install & Run
 
@@ -65,9 +65,38 @@ The app runs at `http://localhost:24519` by default.
 ### Running the Full Monorepo
 
 ```bash
-# Start all services (web app + API server)
+# Start the web app
 pnpm run dev
 ```
+
+`PORT` defaults to `24519` and `BASE_PATH` defaults to `/`. The optional
+API scaffold can be started separately with `pnpm --filter @workspace/api-server run dev`
+after configuring its required environment variables.
+
+The payment form sends **test XLM**, without fiat conversion. The $500 fee
+comparison is illustrative. If federation names fail to resolve, use a valid
+recipient Stellar public key (`G...`); the external directory must be online
+for named recipients to work.
+
+### Transfer recovery and history
+
+Before broadcasting a signed payment, the app saves its hash, public addresses,
+amount, contract and Testnet network in this browser. It does not store private
+keys or signed transaction payloads. If saving fails, the app stops before
+broadcast and explains the storage problem.
+
+The dashboard's **Transfer history** survives refreshes. Pending transfers can
+be checked without signing or sending again. Network errors and missing records
+remain uncertain; only an explicit network result confirms or fails a transfer.
+Confirmed transfers offer receipts after a fresh network check. Connecting a
+wallet filters history to transfers sent by that wallet.
+
+History is local to this browser; clearing site data removes it. Cross-device
+history and recovery require a backend and are not implemented.
+
+Run `pnpm test` for amount, history recovery and confirmation-response tests.
+CI runs these checks and the workspace build on Linux and Windows with Node 22
+and 24. Wallet signing still needs a manual Testnet verification.
 
 ---
 
