@@ -595,6 +595,10 @@ importers:
       '@stellar/stellar-sdk':
         specifier: ^16.0.1
         version: 16.0.1
+    devDependencies:
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
 
   scripts:
     devDependencies:
