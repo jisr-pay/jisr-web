@@ -9,14 +9,17 @@ pnpm build
 ```
 
 The automated suite covers exact stroop amounts, journal persistence and
-corruption, stale callbacks, settlement response validation, Testnet
-configuration, clipboard failures, total-fee comparisons, EN/AR dictionary
-parity, error classification and rate-limit windows, and corridor fee/speed
-claims. Network responses in these tests are mocked. Tests never request a
-wallet signature or send XLM.
+corruption, stale callbacks, settlement response validation (including
+future-dated confirmations), Testnet configuration, clipboard failures,
+total-fee comparisons, EN/AR dictionary parity, error classification —
+exhaustively over every code with dedicated friendly copy — rate-limit windows,
+corridor fee/speed claims, and the pure receipt payload (filename pattern,
+hash and recipient truncation, settlement-time formatting). Network responses
+in these tests are mocked. Tests never request a wallet signature or send XLM.
 
-The September 11, 2026 local verification passed 46 tests, the frontend
-TypeScript check, and the production Vite build. Earlier local runs could not
+The September 11, 2026 local verification passed 53 tests, the frontend
+TypeScript check, and the production Vite build (with the three.js and jsPDF
+vendor libraries in dedicated chunks). Earlier local runs could not
 build: the sandbox exports `PORT=0`, which `vite.config.ts` rejects, and the
 same runs misread that as an esbuild subprocess failure. Invoking Vite directly
 with valid variables builds the real output:
