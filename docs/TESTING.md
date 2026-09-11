@@ -15,11 +15,19 @@ parity, error classification and rate-limit windows, and corridor fee/speed
 claims. Network responses in these tests are mocked. Tests never request a
 wallet signature or send XLM.
 
-The September 11, 2026 local verification passed 46 tests and the frontend
-TypeScript check. Tests used Node's `--test-isolation=none` because this sandbox
-restricts subprocesses. The production Vite build remains unverified locally:
-esbuild's config loader failed with `spawn EPERM`. A passing typecheck does not
-establish that the application bundles or works in a browser.
+The September 11, 2026 local verification passed 46 tests, the frontend
+TypeScript check, and the production Vite build. Earlier local runs could not
+build: the sandbox exports `PORT=0`, which `vite.config.ts` rejects, and the
+same runs misread that as an esbuild subprocess failure. Invoking Vite directly
+with valid variables builds the real output:
+
+```sh
+cd artifacts/jisr-pay
+PORT=3000 BASE_PATH=/ node node_modules/vite/bin/vite.js build --config vite.config.ts
+```
+
+CI still builds on Linux and Windows, and a passing local typecheck does not
+establish that the application works in a browser.
 
 ## Browser acceptance on Testnet
 
