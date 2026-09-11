@@ -1,17 +1,20 @@
+import { lazy, Suspense, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
-import Home from '@/pages/Home';
 import Landing from '@/pages/Landing';
 import { I18nProvider } from '@/contexts/I18nContext';
 import { JisrCopilot } from '@/components/JisrCopilot';
 import { RootErrorBoundary } from '@/components/RootErrorBoundary';
 import { createLogger } from '@/lib/logger';
-import { useEffect } from 'react';
 
 import { ThemeProvider } from 'next-themes';
+
+// Route-level code splitting: the payment dashboard pulls in the Stellar SDK
+// and Freighter bridge, so it loads only when someone actually visits /app.
+const Home = lazy(() => import('@/pages/Home'));
 
 const queryClient = new QueryClient();
 const log = createLogger('app');
@@ -20,7 +23,11 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
-      <Route path="/app" component={Home} />
+      <Route path="/app">
+        <Suspense fallback={<div className="min-h-screen bg-background" aria-hidden="true" />}>
+          <Home />
+        </Suspense>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
