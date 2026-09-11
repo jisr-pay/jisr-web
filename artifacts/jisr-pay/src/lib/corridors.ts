@@ -1,7 +1,7 @@
-import { resolveNetworkConfig } from './network-config';
+import { resolveNetworkConfig } from './network-config.ts';
 
-import type { Corridor } from './fees';
-export { calculateTotal, getBestCorridor, type Corridor } from './fees';
+import type { Corridor } from './fees.ts';
+export { calculateTotal, getBestCorridor, type Corridor } from './fees.ts';
 
 export const CORRIDORS: Corridor[] = [
   {
