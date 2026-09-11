@@ -14,6 +14,12 @@ Decision recorded September 11, 2026, following the shared EthTobi/Freebuff prop
 
 Each repository keeps its own documentation. These are target boundaries, not five immediate migrations or five assumed funding submissions.
 
+## Progress (2026-09-12)
+
+- Steps 1–2 complete: organization `jisr-pay` exists, the repository was transferred, and the SDK was extracted into `lib/jisr-sdk` with web imports updated (branch `feat/extract-jisr-sdk`, 38 SDK + 18 web tests green, typechecks and web build verified).
+- Step 6 complete: `jisr-pay/jisr-sdk` published with history preserved per docs/SDK_PUBLISH_RUNBOOK.md; its CI matrix passed on the first run. The pre-existing LICENSE-only initial commit in the destination was superseded (see the runbook postscript).
+- Pending: merge of the extraction branch into main, branch protection (ORG_SETUP §5), the `jisr-web` rename (docs/RENAME_CHECKLIST.md), and Codex's interface review before backend implementation starts (handoff: docs/API_HANDOFF.md).
+
 ## Evidence and extraction boundaries
 
 The current stellar.ts invokes route_payment via Soroban RPC. This establishes the client integration, but does not independently verify the current deployment, its source or its behavior. No Rust source, Cargo.toml or WASM was found in this checkout. Obtain original source and deployment provenance; do not reconstruct a contract and present it as the deployed original.
