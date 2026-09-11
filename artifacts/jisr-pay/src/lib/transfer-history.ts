@@ -58,6 +58,9 @@ export function readTransfers(storage: HistoryStorage): SavedTransfer[] {
   const records = (data as { transfers: unknown[] }).transfers;
   // Do not overwrite a damaged/unsupported journal with an empty history.
   if (!records.every(isSavedTransfer)) throw new Error('Saved transfer history contains invalid records.');
+  if (new Set(records.map(record => record.hash)).size !== records.length) {
+    throw new Error('Saved transfer history contains duplicate transaction hashes.');
+  }
   return records.sort((a, b) => Date.parse(b.submittedAt) - Date.parse(a.submittedAt));
 }
 
