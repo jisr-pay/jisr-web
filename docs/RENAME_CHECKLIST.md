@@ -1,5 +1,7 @@
 # jisr-pay → jisr-web rename checklist
 
+> **Status (2026-09-12): the rename has been performed** — `https://github.com/jisr-pay/jisr-web` is live, old URLs redirect, and the local checkout's remote was updated. Remaining: the §5 verification pass (CI + Vercel connection) on the next PR, and confirming branch protection carried over. The extraction PR should be merged through that verification path.
+
 Per docs/ORG_SETUP.md §6.7 and docs/COLLABORATION_PLAN.md step 6 sequencing: **run this only after the `jisr-sdk` repository is published and its CI is green** (docs/SDK_PUBLISH_RUNBOOK.md). All GitHub-side actions are performed by EthTobi; nothing in this checklist has been executed here.
 
 ## 1. Pre-flight verification (before touching GitHub)
