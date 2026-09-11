@@ -93,21 +93,44 @@ Note: GitHub also offers the newer **Rulesets** UI; classic branch protection
 above is the simplest path and does everything needed. If you prefer rulesets,
 map each checkbox 1:1 — the required-check names are identical.
 
-## 5. The two-person (two-agent) workflow this enables
+## 5. The two-person (two-agent) workflow on one shared laptop
 
-1. Each side works in its own clone on its own machine; agents commit under
-   their human's identity (this machine's commits are EthTobi's, Codex's are
-   OTimileyin's), so PR authorship and review stay honest.
-2. Branch names follow the commit convention: `feat/…`, `fix/…`, `test/…`,
+Both agents run on the same machine in the same folder: Buffy (Freebuff
+desktop app) and Codex (VS Code + CLI) share **one working tree**. That is
+the main hazard — not push races, but one agent staging, overwriting, or
+branch-switching away the other's uncommitted work.
+
+1. **Prefer separate worktrees before parallel sessions.** One directory
+   cannot safely hold two agents' uncommitted work:
+
+   ```sh
+   git worktree add ../jisr-pay-codex feat/<branch>
+   ```
+
+   Each worktree checks out its own branch; history stays single-source and
+   nothing uncommitted is ever shared. (Attribution per worktree is possible
+   via `git config extensions.worktreeConfig` + `git config --worktree …`.)
+2. **If working in the shared checkout anyway, serialize.** Only one agent
+   edits at a time. Every agent: run `git status` immediately before and
+   after its own work, commit in small slices staging explicit files only,
+   and never `git add -A`/`.`, never switch branches, never discard anything
+   it did not create.
+3. **Authorship stays honest** (`CONTRIBUTING.md`): agents commit under the
+   human driving them — Buffy's commits are EthTobi's, Codex's are
+   OTimileyin's. If both share one local git config, say who drove the work
+   in the commit body instead of adding trailers.
+4. Branch names follow the commit convention: `feat/…`, `fix/…`, `test/…`,
    `docs/…`, `chore/…`.
-3. Push branch → open PR → **the other person reviews** → squash-merge with a
-   `type: subject` title. No direct pushes to `main` exist anymore.
-4. Task ownership comes from `docs/PLAN.md` (P2 items 9–12) and the repo-lead
-   table agreed for the org: web + SDK on EthTobi's side, api + routing on
-   OTimileyin's side, contract repo by whoever holds the Soroban source.
-5. Extraction sequencing stays as decided: **finish the `jisr-sdk` workspace
-   extraction before parallel work starts** — it touches every `src/` file and
-   is the one change that must not happen concurrently.
+5. Push branch → open PR → **the other person reviews** → squash-merge with
+   a `type: subject` title. Protection makes this mandatory even on one
+   machine — no direct pushes to `main` from either agent.
+6. Task ownership comes from `docs/PLAN.md` (P2 items 9–12) and the
+   repo-lead table agreed for the org: web + SDK on EthTobi's side, api +
+   routing on OTimileyin's side, contract repo by whoever holds the Soroban
+   source.
+7. Extraction sequencing stays as decided: **finish the `jisr-sdk` workspace
+   extraction before parallel work starts** — it touches every `src/` file
+   and is the one change that must not happen concurrently.
 
 ## 6. Verify the setup actually protects you
 
