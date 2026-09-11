@@ -118,7 +118,7 @@ Until extraction finishes in the existing shared folder, serialize edits and Git
 
 ## 8. Ready-to-start checklist
 
-> **Progress (2026-09-12):** organization created; repository transferred (remotes on `jisr-pay` verified working); SDK extraction complete on `feat/extract-jisr-sdk`; `jisr-pay/jisr-sdk` published with preserved history and a passing CI matrix; rename checklist and backend handoff documents in place. Still open: main branch protection on both repos, PR merge, the `jisr-web` rename, and confirming both human owners have accepted their invites.
+> **Progress (2026-09-12):** organization created; repository transferred (remotes on `jisr-pay` verified working); SDK extraction complete on `feat/extract-jisr-sdk`; `jisr-pay/jisr-sdk` published with preserved history and a passing CI matrix; **the app repository was renamed to `jisr-web`** (local remote updated; §6.7 verification pending on the next PR); rename checklist and backend handoff documents in place. Still open: main branch protection on both repos, PR merge, §5 post-rename CI/Vercel verification, and confirming both human owners have accepted their invites.
 
 - [ ] Organization created and both human owners accepted.
 - [ ] Existing repository transferred, CI and deployment verified.

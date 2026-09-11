@@ -18,7 +18,7 @@ Each repository keeps its own documentation. These are target boundaries, not fi
 
 - Steps 1–2 complete: organization `jisr-pay` exists, the repository was transferred, and the SDK was extracted into `lib/jisr-sdk` with web imports updated (branch `feat/extract-jisr-sdk`, 38 SDK + 18 web tests green, typechecks and web build verified).
 - Step 6 complete: `jisr-pay/jisr-sdk` published with history preserved per docs/SDK_PUBLISH_RUNBOOK.md; its CI matrix passed on the first run. The pre-existing LICENSE-only initial commit in the destination was superseded (see the runbook postscript).
-- Pending: merge of the extraction branch into main, branch protection (ORG_SETUP §5), the `jisr-web` rename (docs/RENAME_CHECKLIST.md), and Codex's interface review before backend implementation starts (handoff: docs/API_HANDOFF.md).
+- Pending: merge of the extraction branch into main (with post-rename CI/Vercel verification), branch protection (ORG_SETUP §5), and Codex's interface review before backend implementation starts (handoff: docs/API_HANDOFF.md). The app repository was renamed to `jisr-web` on 2026-09-12; docs/RENAME_CHECKLIST.md records the remaining verification.
 
 ## Evidence and extraction boundaries
 
