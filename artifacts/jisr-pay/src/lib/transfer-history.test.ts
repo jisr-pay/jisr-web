@@ -15,6 +15,21 @@ const pending: SavedTransfer = {
 const settlement = { hash: pending.hash, successful: true, feeCharged: '0.0000100 XLM',
   ledger: 42, createdAt: '2026-09-11T10:00:05.000Z' };
 
+test('duplicate transaction hashes cannot silently replace saved payment evidence', () => {
+  const storage = memoryStorage();
+  const raw = JSON.stringify({ version: 1, transfers: [pending, { ...pending, amount: '999' }] });
+  storage.setItem(HISTORY_KEY, raw);
+  assert.throws(() => readTransfers(storage), /duplicate/);
+  assert.throws(() => saveTransfer(storage, pending), /duplicate/);
+  assert.equal(storage.getItem(HISTORY_KEY), raw);
+});
+
+test('incomplete confirmations and invalid accounting fields are rejected', () => {
+  for (const patch of [{ status: 'confirmed' }, { ledger: 1.5 }, { feePaid: 'NaN XLM' }, { confirmedAt: 'invalid' }]) {
+    assert.throws(() => saveTransfer(memoryStorage(), { ...pending, ...patch } as SavedTransfer), /Invalid transfer/);
+  }
+});
+
 test('a fresh reader recovers the exact pending transfer after reload', () => {
   const storage = memoryStorage();
   saveTransfer(storage, pending);
