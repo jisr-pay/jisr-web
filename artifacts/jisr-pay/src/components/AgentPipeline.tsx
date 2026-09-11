@@ -137,7 +137,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
       txHash: txResult.hash,
       feePaid: txResult.feePaid,
       settlementTimeSec: txResult.settlementTimeMs / 1000,
-      contractId: CONTRACT_ID,
+      contractId: CONTRACT_ID(),
       timestamp: new Date(txResult.createdAt ?? Date.now()),
     });
     toast({ title: t('receiptDownloaded'), description: `jisr-pay-receipt-${txResult.hash.slice(0, 8)}.pdf` });
@@ -266,7 +266,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
         onPending: (pending) => {
           const record: SavedTransfer = {
             hash: pending.hash, network: 'TESTNET', asset: 'XLM', sender: senderKey,
-            recipient: resolvedKey, amount: amount.trim(), contractId: CONTRACT_ID,
+            recipient: resolvedKey, amount: amount.trim(), contractId: CONTRACT_ID(),
             submittedAt: new Date().toISOString(), status: 'pending',
           };
           // A failed save stops broadcast before the signed transaction is sent.
@@ -623,7 +623,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <span className="text-xs text-muted-foreground block mb-1">{t('contractAddress')}</span>
-                              <span className="text-sm font-mono">{CONTRACT_ID.slice(0, 10)}...{CONTRACT_ID.slice(-4)}</span>
+                              <span className="text-sm font-mono">{CONTRACT_ID().slice(0, 10)}...{CONTRACT_ID().slice(-4)}</span>
                             </div>
                             <div>
                               <span className="text-xs text-muted-foreground block mb-1">{t('fee')}</span>
