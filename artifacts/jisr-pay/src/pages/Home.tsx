@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useI18nContext } from '@/contexts/I18nContext';
 import { AgentPipeline } from '@/components/AgentPipeline';
+import { TransferHistory } from '@/components/TransferHistory';
 import { Wallet, Globe, ArrowLeft } from 'lucide-react';
 import { connectFreighter } from '@/lib/stellar';
 import { CONTRACT_ID } from '@/lib/corridors';
@@ -29,11 +30,11 @@ export default function Home() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/')}
-            title="Back to home"
+            title={t('backToHome')}
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
-            <span className="hidden sm:inline">Home</span>
+            <span className="hidden sm:inline">{t('home')}</span>
           </button>
 
           <div className="w-px h-4 bg-border" />
@@ -77,17 +78,18 @@ export default function Home() {
       {/* Dashboard Content */}
       <main className="flex-1 flex flex-col w-full pt-6">
         <div className="w-full max-w-4xl mx-auto px-4 mb-4">
-          <h1 className="text-2xl font-extrabold text-foreground">Send a Payment</h1>
+          <h1 className="text-2xl font-extrabold text-foreground">{t('sendPaymentTitle')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            AI-routed, blockchain-settled. Choose an amount and recipient below.
+            {t('sendPaymentSubtitle')}
           </p>
         </div>
 
         <AgentPipeline walletKey={walletKey} onWalletChange={setWalletKey} />
+        <TransferHistory walletKey={walletKey} />
       </main>
 
       {/* Dashboard Footer */}
-      <footer className="w-full border-t border-border py-5 px-6 bg-card flex flex-col sm:flex-row items-center justify-between gap-3">
+      <footer className="w-full border-t border-border py-5 px-6 pb-24 bg-card flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 text-muted-foreground text-sm font-medium">
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
           {t('poweredByStellar')}
@@ -95,7 +97,7 @@ export default function Home() {
         <div className="text-muted-foreground text-xs font-mono">
           {t('contractAddress')}: {CONTRACT_ID.slice(0, 10)}…{CONTRACT_ID.slice(-6)}
         </div>
-        <div className="text-xs text-muted-foreground/60">
+        <div className="text-xs text-muted-foreground">
           © {new Date().getFullYear()} Jisr Pay.
         </div>
       </footer>
