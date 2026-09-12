@@ -16,6 +16,8 @@ import { ThemeProvider } from 'next-themes';
 // Route-level code splitting: the payment dashboard pulls in the Stellar SDK
 // and Freighter bridge, so it loads only when someone actually visits /app.
 const Home = lazy(() => import('@/pages/Home'));
+// The docs page is text-heavy and lives outside the app path; it stays its own chunk.
+const Docs = lazy(() => import('@/pages/Docs'));
 
 const queryClient = new QueryClient();
 const log = createLogger('app');
@@ -28,6 +30,11 @@ function Router() {
       <Route path="/app">
         <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground" role="status" aria-live="polite">{t('loading')}</div>}>
           <Home />
+        </Suspense>
+      </Route>
+      <Route path="/docs">
+        <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground" role="status" aria-live="polite">{t('loading')}</div>}>
+          <Docs />
         </Suspense>
       </Route>
       <Route component={NotFound} />
