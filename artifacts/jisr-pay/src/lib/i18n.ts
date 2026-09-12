@@ -33,6 +33,7 @@ export const strings = {
     navFeatures: 'Features',
     navHowItWorks: 'How It Works',
     navCorridors: 'Corridors',
+    navDocs: 'Docs',
     launchApp: 'Launch App',
     // Receipt
     downloadReceipt: 'Download Receipt',
@@ -198,6 +199,7 @@ export const strings = {
     navFeatures: 'المميزات',
     navHowItWorks: 'كيف يعمل',
     navCorridors: 'الممرات',
+    navDocs: 'التوثيق',
     launchApp: 'تشغيل التطبيق',
     // Receipt
     downloadReceipt: 'تنزيل الإيصال',
