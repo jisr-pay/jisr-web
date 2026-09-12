@@ -58,6 +58,12 @@ export default function Landing() {
               {label}
             </button>
           ))}
+          <button
+            onClick={() => navigate('/docs')}
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {t('navDocs')}
+          </button>
         </div>
 
         {/* Right controls */}
@@ -208,6 +214,8 @@ export default function Landing() {
           <span className="text-muted-foreground text-sm ms-2">{t('poweredByStellar')}</span>
         </div>
         <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
+          <button onClick={() => navigate('/docs')} className="font-medium hover:text-foreground transition-colors">{t('navDocs')}</button>
+          <span aria-hidden="true" className="text-border">·</span>
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           {t('testnetLive')}
         </div>
