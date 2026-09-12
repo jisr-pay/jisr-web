@@ -19,7 +19,19 @@ Each repository keeps its own documentation. These are target boundaries, not fi
 - Steps 1–2 complete: organization `jisr-pay` exists, the repository was transferred, and the SDK was extracted into `lib/jisr-sdk` with web imports updated (38 SDK + 18 web tests green, typechecks and web build verified).
 - Extraction **merged to main** on 2026-09-12 via PR #14 (`cfa0166`); post-merge CI run passed. `jisr-web` rename done; post-rename CI verified on the same merge. Remaining checks: production deployment confirmation on Vercel and branch protection (ORG_SETUP §5).
 - Step 6 complete: `jisr-pay/jisr-sdk` published with history preserved per docs/SDK_PUBLISH_RUNBOOK.md; its CI matrix passed on the first run. The pre-existing LICENSE-only initial commit in the destination was superseded (see the runbook postscript).
-- Pending: merge of the extraction branch into main (with post-rename CI/Vercel verification), branch protection (ORG_SETUP §5), and Codex's interface review before backend implementation starts (handoff: docs/API_HANDOFF.md). The app repository was renamed to `jisr-web` on 2026-09-12; docs/RENAME_CHECKLIST.md records the remaining verification.
+- Still open: production deployment confirmation on Vercel for the renamed `jisr-web` (needs the live URL), and confirming both human accounts have accepted org owner invites (ORG_SETUP §2.5). `main` protection rulesets on both `jisr-web` and `jisr-sdk` are active; the contributor-attribution rewrite and re-clone notice is below.
+
+## Contributor-attribution rewrite and re-clone notice (2026-09-12)
+
+On 2026-09-12 the histories of both `jisr-web` and `jisr-sdk` were rewritten to remove assistant/bot attribution from commits. The pre-rewrite `jisr-web` history is preserved read-only in `contributor-history.bundle` at `refs/backup/main-before-contributor-rewrite`; the standalone SDK rewrite was executed and validated per docs/SDK_PUBLISH_RUNBOOK.md.
+
+This rewrite invalidates every clone made beforehand. Anyone working on `jisr-web` or `jisr-sdk`:
+
+- Delete local clones and re-clone fresh from `jisr-pay/jisr-web` and `jisr-pay/jisr-sdk`.
+- Do not pull, fetch, or reuse local branches created before the rewrite.
+- Do not force-push a stale clone over the rewritten remote.
+
+Current `main` on both repos is the rewritten history. Pre-rewrite commits are read-only backups and must not be republished.
 
 ## Evidence and extraction boundaries
 
