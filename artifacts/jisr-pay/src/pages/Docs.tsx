@@ -47,7 +47,7 @@ const repos: { name: string; link: string; owner: Bi; purpose: Bi; status: Bi }[
       en: 'Internal Node HTTP Testnet API: durable transfer tracking and a read-only reconciliation boundary.',
       ar: 'واجهة برمجة Node HTTP داخلية لشبكة الاختبار: تتبّع دائم للتحويلات وحدود مطابقة للقراءة فقط.',
     },
-    status: { en: 'Draft PR, CI green', ar: 'PR مسودة، CI خضراء' },
+    status: { en: 'In development', ar: 'قيد التطوير' },
   },
   {
     name: 'jisr-routing',
@@ -57,7 +57,7 @@ const repos: { name: string; link: string; owner: Bi; purpose: Bi; status: Bi }[
       en: 'Provider interface and exact indicative quote comparison. No live providers yet.',
       ar: 'واجهة المزود ومقارنة دقيقة للأسعار الاسترشادية. لا مزودات حية بعد.',
     },
-    status: { en: 'Draft PR, CI green', ar: 'PR مسودة، CI خضراء' },
+    status: { en: 'In development', ar: 'قيد التطوير' },
   },
   {
     name: 'payment-router-contract',
@@ -304,8 +304,12 @@ const roadmap: { title: Bi; items: Bi[] }[] = [
         ar: 'فصل المستودعات الذاتي تحت github.com/jisr-pay؛ وإعادة تسمية الويب إلى jisr-web.',
       },
       {
-        en: 'SDK extraction and standalone publication; backend-consumed interface frozen and gate-reviewed.',
-        ar: 'استخراج SDK ونشره كحزمة مستقلة؛ وتجميد الواجهة المستهلكة من الواجهة الخلفية مع مراجعتها.',
+        en: 'SDK extraction and standalone publication; backend-consumed interface frozen.',
+        ar: 'استخراج SDK ونشره كحزمة مستقلة؛ وتجميد الواجهة المستهلكة من الواجهة الخلفية.',
+      },
+      {
+        en: 'Organization ownership confirmed; branch protection enforcing on published repos.',
+        ar: 'تأكيد ملكية المنظمة؛ وحماية الفروع مفعّلة على المستودعات المنشورة.',
       },
     ],
   },
@@ -329,8 +333,12 @@ const roadmap: { title: Bi; items: Bi[] }[] = [
         ar: 'مُكيِّف أدلة مطابقة حي وواجهة التحقق من ملكية المحفظة للواجهة البرمجية.',
       },
       {
-        en: 'Organization ownership confirmation and branch protection on published repos.',
-        ar: 'تأكيد ملكية المنظمة وحماية الفروع على المستودعات المنشورة.',
+        en: 'Interface review sign-off and first backend milestone (tracked in issue #18).',
+        ar: 'اعتماد مراجعة الواجهة والمرحلة الخلفية الأولى (متابعة في القضية رقم 18).',
+      },
+      {
+        en: 'Draft pull requests for the API and routing repositories as their work lands.',
+        ar: 'PR مسودات لمستودعي الواجهة والتوجيه مع نزول أعمالهما.',
       },
     ],
   },
@@ -375,8 +383,8 @@ const securityItems: Bi[] = [
 const links: { name: string; url: string; note: Bi }[] = [
   { name: 'jisr-web', url: 'https://github.com/jisr-pay/jisr-web', note: { en: 'This web app', ar: 'هذا التطبيق الإلكتروني' } },
   { name: 'jisr-sdk', url: 'https://github.com/jisr-pay/jisr-sdk', note: { en: 'Published SDK package', ar: 'حزمة SDK المنشورة' } },
-  { name: 'jisr-api', url: 'https://github.com/jisr-pay/jisr-api', note: { en: 'Internal Testnet API (draft PR #1)', ar: 'واجهة Testnet الداخلية (PR مسودة #1)' } },
-  { name: 'jisr-routing', url: 'https://github.com/jisr-pay/jisr-routing', note: { en: 'Quote provider interface (draft PR #1)', ar: 'واجهة مزود الأسعار (PR مسودة #1)' } },
+  { name: 'jisr-api', url: 'https://github.com/jisr-pay/jisr-api', note: { en: 'Internal Testnet API', ar: 'واجهة Testnet الداخلية' } },
+  { name: 'jisr-routing', url: 'https://github.com/jisr-pay/jisr-routing', note: { en: 'Quote provider interface', ar: 'واجهة مزود الأسعار' } },
   { name: 'payment-router-contract', url: 'https://github.com/jisr-pay/payment-router-contract', note: { en: 'Deployment inspection (draft PR #1)', ar: 'فحص النشر (PR مسودة #1)' } },
 ];
 
@@ -393,7 +401,7 @@ const text = {
       'Jisr Pay is a cross-border remittance showcase for Gulf ↔ Africa corridors that routes and settles payments on the Stellar Testnet. Three cooperating agents — Rate-Scout (finds the cheapest and fastest corridor), Router (resolves the recipient and builds a Soroban transaction on the deployed payment router) and Reconciler (polls the network and confirms settlement) — take a transfer from form to receipt. This page documents the current architecture, the frozen SDK interface, the internal API contract and the evidence status of the deployed contract.',
     repos: 'Repositories & ownership',
     reposIntro:
-      'The code is split across separate repositories under github.com/jisr-pay. The web app and SDK form the shipped product; the API, routing and contract repositories are the backend foundation with draft PRs open.',
+      'The code is split across separate repositories under github.com/jisr-pay. The web app and SDK form the shipped product; the API, routing and contract repositories are the backend foundation under active development.',
     repoCol: 'Repository',
     ownerCol: 'Owner',
     purposeCol: 'Purpose',
@@ -446,7 +454,7 @@ const text = {
       'جسر باي هو عرض لتحويل الأموال عبر الحدود لممرات الخليج ↔ أفريقيا، يوجّه الدفعات ويسوّيها على شبكة ستيلار الاختبارية. ثلاثة وكلاء متعاونون — استطلاع الأسعار (يجد أرخص وأسرع طريق)، الموجّه (يحدد المستلم ويبني معاملة سوروبان على عقد الموجّه المنشور)، والمطابق (يراقب الشبكة ويؤكد التسوية) — ينقلون التحويل من النموذج إلى الإيصال. توثّق هذه الصفحة البنية الحالية، وواجهة SDK المجمّدة، وعقد الواجهة البرمجية الداخلية، وحالة أدلة العقد المنشور.',
     repos: 'المستودعات والملكية',
     reposIntro:
-      'الكود موزّع على مستودعات منفصلة تحت github.com/jisr-pay. يشكّل التطبيق الإلكتروني وSDK المنتَج المنشور؛ أما مستودعات الواجهة، والتوجيه، والعقد فهي الأساس الخلفي مع PR مسودات مفتوحة.',
+      'الكود موزّع على مستودعات منفصلة تحت github.com/jisr-pay. يشكّل التطبيق الإلكتروني وSDK المنتَج المنشور؛ أما مستودعات الواجهة، والتوجيه، والعقد فهي الأساس الخلفي قيد التطوير.',
     repoCol: 'المستودع',
     ownerCol: 'المالك',
     purposeCol: 'الغرض',
