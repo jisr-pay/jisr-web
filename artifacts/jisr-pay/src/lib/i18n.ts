@@ -34,6 +34,7 @@ export const strings = {
     navHowItWorks: 'How It Works',
     navCorridors: 'Corridors',
     navDocs: 'Docs',
+    corridorBest: 'Best',
     launchApp: 'Launch App',
     // Receipt
     downloadReceipt: 'Download Receipt',
@@ -200,6 +201,7 @@ export const strings = {
     navHowItWorks: 'كيف يعمل',
     navCorridors: 'الممرات',
     navDocs: 'التوثيق',
+    corridorBest: 'الأفضل',
     launchApp: 'تشغيل التطبيق',
     // Receipt
     downloadReceipt: 'تنزيل الإيصال',
