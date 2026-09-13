@@ -125,9 +125,11 @@ verification limits, and the browser acceptance procedure.
 3. Enter any recipient (e.g. `alice*jisr.pay`)
 4. Click **Find the Best Route**
 5. Review the illustrative corridor comparison, then continue to payment review
-6. Connect a wallet and resolve a valid recipient before signing. A federation
-   lookup may fail if its external service is unavailable; use a valid public
-   key for wallet testing. No-wallet testing cannot confirm settlement.
+6. Connect a wallet and resolve a valid recipient before signing. Federation
+   names (e.g. `alice*jisr.pay`) resolve only if the owner has registered them
+   in the external directory — unregistered names return a clear
+   "not registered" message. Use a valid public key (G…) for wallet testing.
+   No-wallet testing cannot confirm settlement.
 
 ---
 

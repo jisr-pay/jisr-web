@@ -173,7 +173,7 @@ export default function Landing() {
                         </span>
                         {c.isJisr && (
                           <span className="bg-amber-500/20 text-amber-500 text-xs px-2 py-0.5 rounded-full font-bold uppercase">
-                            Best
+                            {t('corridorBest')}
                           </span>
                         )}
                       </td>
