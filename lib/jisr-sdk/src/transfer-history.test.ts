@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HISTORY_KEY, applySettlement, readTransfers, saveTransfer, settlementDurationMs,
+import { HISTORY_KEY, applySettlement, isSavedTransfer, readTransfers, saveTransfer, settlementDurationMs,
   type HistoryStorage, type SavedTransfer } from './transfer-history.ts';
 
 function memoryStorage(): HistoryStorage {
@@ -22,6 +22,17 @@ test('duplicate transaction hashes cannot silently replace saved payment evidenc
   assert.throws(() => readTransfers(storage), /duplicate/);
   assert.throws(() => saveTransfer(storage, pending), /duplicate/);
   assert.equal(storage.getItem(HISTORY_KEY), raw);
+});
+
+test('native XLM registrations carry contractId null and keep identity across retries', () => {
+  const storage = memoryStorage();
+  const native: SavedTransfer = { ...pending, contractId: null };
+  assert.ok(isSavedTransfer(native));
+  assert.ok(!isSavedTransfer({ ...native, contractId: 'not-a-contract' }));
+  saveTransfer(storage, native);
+  // An identical retry is accepted; flipping the contract claim on the same hash is not.
+  saveTransfer(storage, { ...native });
+  assert.throws(() => saveTransfer(storage, { ...native, contractId: 'C' + 'A'.repeat(55) }), /cannot change/);
 });
 
 test('incomplete confirmations and invalid accounting fields are rejected', () => {

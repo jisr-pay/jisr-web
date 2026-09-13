@@ -254,7 +254,9 @@ export function generateReceiptPDFImpl(data: ReceiptData): void {
   rgb(doc, MUTED);
   doc.text('Network: Stellar Testnet', margin, netY + 5);
   doc.text(
-    `Contract: ${data.contractId.slice(0, 10)}...${data.contractId.slice(-6)}`,
+    data.contractId
+      ? `Contract: ${data.contractId.slice(0, 10)}...${data.contractId.slice(-6)}`
+      : 'Contract: native XLM transfer',
     W / 2, netY + 5, { align: 'center' },
   );
 
