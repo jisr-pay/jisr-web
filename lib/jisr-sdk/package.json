@@ -4,19 +4,53 @@
   "description": "Reusable Stellar payment primitives for Jisr Pay: amounts, errors, journal, settlement, network config, rate limiting.",
   "license": "MIT",
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "exports": {
-    ".": "./src/index.ts",
-    "./amount": "./src/amount.ts",
-    "./errors": "./src/errors.ts",
-    "./logger": "./src/logger.ts",
-    "./network-config": "./src/network-config.ts",
-    "./payment": "./src/payment.ts",
-    "./rate-limit": "./src/rateLimit.ts",
-    "./settlement": "./src/settlement.ts",
-    "./transfer-history": "./src/transfer-history.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./amount": {
+      "types": "./dist/amount.d.ts",
+      "default": "./dist/amount.js"
+    },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "default": "./dist/errors.js"
+    },
+    "./logger": {
+      "types": "./dist/logger.d.ts",
+      "default": "./dist/logger.js"
+    },
+    "./network-config": {
+      "types": "./dist/network-config.d.ts",
+      "default": "./dist/network-config.js"
+    },
+    "./payment": {
+      "types": "./dist/payment.d.ts",
+      "default": "./dist/payment.js"
+    },
+    "./rate-limit": {
+      "types": "./dist/rateLimit.d.ts",
+      "default": "./dist/rateLimit.js"
+    },
+    "./settlement": {
+      "types": "./dist/settlement.d.ts",
+      "default": "./dist/settlement.js"
+    },
+    "./transfer-history": {
+      "types": "./dist/transfer-history.d.ts",
+      "default": "./dist/transfer-history.js"
+    },
+    "./package.json": "./package.json"
   },
   "scripts": {
+    "build": "tsc --build",
+    "prepack": "npm run build",
     "test": "node --experimental-strip-types --test src/amount.test.ts src/errors.test.ts src/network-config.test.ts src/rateLimit.test.ts src/settlement.test.ts src/transfer-history.test.ts src/index.test.ts",
     "typecheck": "tsc --build"
   },

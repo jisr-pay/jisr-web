@@ -95,6 +95,13 @@ const freighterWallet: PaymentWallet = {
   },
 };
 
+// Same-origin federation path. The upstream service sends no CORS headers, so
+// calling it cross-origin would make the browser hide every response (even the
+// 404 that says "not registered") behind an opaque network failure. Vite
+// proxies /api/federation in dev and preview (vite.config.ts) and Vercel
+// rewrites it in production (vercel.json) — the browser only ever talks to us.
+const FEDERATION_PROXY_PATH = '/api/federation';
+
 // Resolves a recipient via the stellar-tags federation API.
 // Throws if the recipient cannot be resolved — there is no fallback wallet.
 export async function resolveFederation(address: string): Promise<string> {
@@ -107,7 +114,7 @@ export async function resolveFederation(address: string): Promise<string> {
     let res: Response;
     try {
       res = await withRetry('federation', () =>
-        fetch(`${networkConfig().federationUrl}/federation?q=${encodeURIComponent(input)}`, {
+        fetch(`${FEDERATION_PROXY_PATH}?q=${encodeURIComponent(input)}`, {
           signal: AbortSignal.timeout(10_000),
         }),
       );

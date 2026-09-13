@@ -50,7 +50,7 @@ export function classifyError(err: unknown): ErrorCode {
   if (msg.includes('wrong network') || msg.includes('network passphrase') || msg.includes('different network')) return 'WRONG_NETWORK';
   if (msg.includes('not funded') || msg.includes('account not found') || msg.includes('friendbot')) return 'NOT_FUNDED';
   if (msg.includes('insufficient') || msg.includes('balance') || msg.includes('underfunded')) return 'INSUFFICIENT_BALANCE';
-  if (msg.includes('not found in the federation') || msg.includes('name tag not found')) return 'RECIPIENT_NOT_FOUND';
+  if (msg.includes('not found in the federation') || msg.includes('name tag not found') || msg.includes('not registered in the recipient directory')) return 'RECIPIENT_NOT_FOUND';
   if (msg.includes('federation lookup failed') || msg.includes('directory')) return 'DIRECTORY_UNAVAILABLE';
   if (msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('load failed') || msg.includes('err_') || msg.includes('econn')) return 'NETWORK';
   if (msg.includes('429') || msg.includes('rate limit') || msg.includes('too many requests')) return 'RATE_LIMITED';
