@@ -121,7 +121,13 @@ export async function resolveFederation(address: string): Promise<string> {
     if (res.status === 404) {
       const body = await res.text();
       if (body.includes('Application not found')) {
-        throw new AppError('DIRECTORY_UNAVAILABLE', 'The recipient directory is offline. Paste a Stellar public key instead.');
+        // The directory answered but this federation name is not registered in
+        // it — that is different from the service being down, and the copy and
+        // error code must not conflate the two.
+        throw new AppError(
+          'RECIPIENT_NOT_FOUND',
+          `Federation name "${input}" is not registered in the recipient directory. Paste the recipient's Stellar address (G…) instead.`,
+        );
       }
       throw new AppError('RECIPIENT_NOT_FOUND', `Recipient "${input}" not found in the federation directory`);
     }
