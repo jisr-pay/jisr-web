@@ -10,7 +10,6 @@ import {
   Address,
   BASE_FEE,
   Contract,
-  Networks,
   rpc,
   TransactionBuilder,
   nativeToScVal,
@@ -18,7 +17,7 @@ import {
 import { AppError, classifyError } from './errors.ts';
 import { createLogger } from './logger.ts';
 import { parseAmountToStroops } from './amount.ts';
-import { resolveNetworkConfig, type NetworkConfig } from './network-config.ts';
+import { type NetworkConfig } from './network-config.ts';
 
 const log = createLogger('payment');
 
