@@ -51,7 +51,7 @@
   "scripts": {
     "build": "tsc --build",
     "prepack": "npm run build",
-    "test": "node --experimental-strip-types --test src/amount.test.ts src/errors.test.ts src/network-config.test.ts src/rateLimit.test.ts src/settlement.test.ts src/transfer-history.test.ts src/index.test.ts",
+    "test": "npm run build && node --experimental-strip-types --test src/amount.test.ts src/errors.test.ts src/network-config.test.ts src/rateLimit.test.ts src/settlement.test.ts src/transfer-history.test.ts src/index.test.ts",
     "typecheck": "tsc --build"
   },
   "dependencies": {
