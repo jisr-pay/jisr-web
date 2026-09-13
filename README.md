@@ -1,5 +1,9 @@
 # Jisr Pay 🌉
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/jisr-pay/.github/main/assets/logo.svg" alt="Jisr Pay" width="400">
+</p>
+
 > **Gulf ↔ Africa remittances at Stellar speed — AI-routed, blockchain-settled, a fraction of the cost.**
 
 Jisr Pay is a hackathon fintech demo for Gulf-to-Africa remittances. Its three-stage pipeline (Rate-Scout → Router → Reconciler) compares illustrative fees, builds a native XLM payment on Stellar Testnet, and checks its network result. The comparison data is static; it does not execute bank transfers, convert fiat currencies, or use a live AI routing service. The app supports English and Arabic with RTL layouts.
