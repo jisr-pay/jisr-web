@@ -11,7 +11,8 @@ export interface ReceiptData {
   txHash: string;
   feePaid: string;
   settlementTimeSec: number;
-  contractId: string;
+  /** Router contract ID, or null when the transfer moved native XLM without a contract claim. */
+  contractId: string | null;
   timestamp: Date;
 }
 
