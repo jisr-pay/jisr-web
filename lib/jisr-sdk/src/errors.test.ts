@@ -16,6 +16,11 @@ test('funding, recipient and directory failures stay distinct', () => {
   assert.equal(classifyError(new Error('insufficient balance')), 'INSUFFICIENT_BALANCE');
   assert.equal(classifyError(new Error('not found in the federation')), 'RECIPIENT_NOT_FOUND');
   assert.equal(classifyError(new Error('federation lookup failed')), 'DIRECTORY_UNAVAILABLE');
+  // An unregistered name is a user-facing not-found, never a directory outage.
+  assert.equal(
+    classifyError(new Error('Federation name "alice*jisr.pay" is not registered in the recipient directory.')),
+    'RECIPIENT_NOT_FOUND',
+  );
 });
 
 test('transport failures map to network, rate limit or timeout', () => {

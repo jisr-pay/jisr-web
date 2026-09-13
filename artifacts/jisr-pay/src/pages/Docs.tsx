@@ -420,7 +420,7 @@ const text = {
     sdkIntro:
       'The backend-consumed interface was frozen at extraction and is imported from the barrel only. Types: TransferSettlement, SavedTransfer, TransferStatus, HistoryStorage, NetworkConfig, TransactionResult.',
     sdkNote:
-      'Packaging note: the package currently ships source-only TypeScript exports. Installed Node consumers still hit ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING until compiled JavaScript and declarations are published.',
+      'Packaging: the published package ships compiled JavaScript with TypeScript declarations (verified in an isolated Node consumer via npm pack).',
     api: 'Internal API',
     apiIntro:
       'Service-only foundation on Node 24 + SQLite. All routes except health require Authorization: Bearer <SERVICE_TOKEN>. Amounts cross the wire as decimal strings; values are exact stroops internally.',
@@ -473,7 +473,7 @@ const text = {
     sdkIntro:
       'واجهة الواجهة الخلفية المستهلكة مجمّدة منذ الاستخراج وتُستورد من الباريل فقط. الأنواع: TransferSettlement، SavedTransfer، TransferStatus، HistoryStorage، NetworkConfig، TransactionResult.',
     sdkNote:
-      'ملاحظة التغليف: الحزمة تشحن حالياً مخرجات TypeScript المصدرية فقط. مستهلكو Node المثبّتون ما زالوا يصطدمون بـ ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING حتى تُنشر JavaScript مجمّعة وإعلانات الأنواع.',
+      'التغليف: الحزمة المنشورة تشحن JavaScript مجمّعة مع إعلانات أنواع TypeScript (تم التحقق في مستهلك Node معزول عبر npm pack).',
     api: 'الواجهة الداخلية',
     apiIntro:
       'أساس خاص بالخدمة على Node 24 + SQLite. جميع المسارات عدا health تتطلب Authorization: Bearer <SERVICE_TOKEN>. تنتقل المبالغ عبر الواجهة كسلاسل عشرية؛ وتكون القيم ستروبات صحيحة داخلياً.',
