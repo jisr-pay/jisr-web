@@ -15,6 +15,20 @@ if (!Number.isInteger(port) || port <= 0 || port > 65535) {
 
 const basePath = process.env.BASE_PATH ?? '/';
 
+// The federation service sends no CORS headers, so the browser cannot read its
+// responses cross-origin (even 404s come back as opaque network failures).
+// Dev and preview therefore proxy the call through our own origin, mirroring
+// the Vercel rewrite in vercel.json used in production.
+const federationProxyTarget =
+  process.env.VITE_FEDERATION_API_BASE?.trim() || 'https://stellar-tags-production.up.railway.app';
+const federationProxy = {
+  '/api/federation': {
+    target: federationProxyTarget,
+    changeOrigin: true,
+    rewrite: (path: string) => path.replace(/^\/api\/federation/, '/federation'),
+  },
+};
+
 export default defineConfig({
   base: basePath,
   plugins: [
@@ -83,6 +97,7 @@ export default defineConfig({
     strictPort: true,
     host: '0.0.0.0',
     allowedHosts: true,
+    proxy: federationProxy,
     fs: {
       strict: true,
     },
@@ -91,5 +106,6 @@ export default defineConfig({
     port,
     host: '0.0.0.0',
     allowedHosts: true,
+    proxy: federationProxy,
   },
 });

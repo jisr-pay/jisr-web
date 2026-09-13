@@ -10,7 +10,8 @@ export interface SavedTransfer {
   sender: string;
   recipient: string;
   amount: string;
-  contractId: string;
+  /** Router contract that settled the transfer; null when native XLM moved without a contract claim. */
+  contractId: string | null;
   submittedAt: string;
   status: TransferStatus;
   confirmedAt?: string;
@@ -35,7 +36,8 @@ export function isSavedTransfer(value: unknown): value is SavedTransfer {
       record.network !== 'TESTNET' || record.asset !== 'XLM' ||
       typeof record.sender !== 'string' || !accountPattern.test(record.sender) ||
       typeof record.recipient !== 'string' || !accountPattern.test(record.recipient) ||
-      typeof record.contractId !== 'string' || !contractPattern.test(record.contractId) ||
+      (record.contractId !== null &&
+        (typeof record.contractId !== 'string' || !contractPattern.test(record.contractId))) ||
       !dateIsValid(record.submittedAt) || typeof record.amount !== 'string' ||
       !['pending', 'confirmed', 'failed'].includes(record.status ?? '')) return false;
   try { parseAmountToStroops(record.amount); } catch { return false; }
