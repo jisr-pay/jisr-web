@@ -1,16 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowRight, Activity, AlertCircle,
-  CheckCircle, Loader2, Copy, ExternalLink, Check,
-  RefreshCw, History, Download
-} from 'lucide-react';
+import { ArrowRight, AlertCircle } from 'lucide-react';
 import { useI18nContext } from '@/contexts/I18nContext';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  CORRIDORS, calculateTotal, formatSpeed, getBestCorridor, Corridor, 
-  CONTRACT_ID 
-} from '@/lib/corridors';
+import { CORRIDORS, calculateTotal, getBestCorridor, Corridor, CONTRACT_ID } from '@/lib/corridors';
 import {
   detectWalletEnvironment, connectFreighter, resolveFederation,
   buildAndSubmitFreighterPayment, pollSettlement, TransactionResult
@@ -30,6 +23,10 @@ import {
 import { copyText } from '@/lib/clipboard';
 import { generateReceiptPDF, receiptFilename } from '@/lib/receipt';
 import { useTransferHistory } from '@/hooks/useTransferHistory';
+import { AgentCard } from './pipeline/AgentCard';
+import { CorridorScanTable, MARKETING_COMPARE_AMOUNT } from './pipeline/CorridorScanTable';
+import { RouterReviewCard } from './pipeline/RouterReviewCard';
+import { ReconcilerResultCard } from './pipeline/ReconcilerResultCard';
 
 const log = createLogger('pipeline');
 
@@ -52,11 +49,11 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
   const [amount, setAmount] = useState<string>('');
   const currency = 'XLM';
   const [recipient, setRecipient] = useState<string>('');
-  
+
   // Step 1 state
   const [isScanning, setIsScanning] = useState(false);
   const [scannedCorridors, setScannedCorridors] = useState<Corridor[]>([]);
-  
+
   // Step 2 state
   const [isResolving, setIsResolving] = useState(false);
   const [resolvedKey, setResolvedKey] = useState<string | null>(null);
@@ -71,7 +68,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
     onWalletChange?.(key);
   };
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Step 3 state
   const [isPolling, setIsPolling] = useState(false);
   const [txResult, setTxResult] = useState<TransactionResult | null>(null);
@@ -137,17 +134,17 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
     downloadingReceiptRef.current = true;
     setIsDownloadingReceipt(true);
     try {
-    await generateReceiptPDF({
-      amount,
-      currency,
-      recipient: resolvedKey ?? recipient,
-      txHash: txResult.hash,
-      feePaid: txResult.feePaid,
-      settlementTimeSec: txResult.settlementTimeMs / 1000,
-      contractId: CONTRACT_ID(),
-      timestamp: new Date(txResult.createdAt ?? Date.now()),
-    });
-    toast({ title: t('receiptDownloaded'), description: receiptFilename(txResult.hash) });
+      await generateReceiptPDF({
+        amount,
+        currency,
+        recipient: resolvedKey ?? recipient,
+        txHash: txResult.hash,
+        feePaid: txResult.feePaid,
+        settlementTimeSec: txResult.settlementTimeMs / 1000,
+        contractId: CONTRACT_ID(),
+        timestamp: new Date(txResult.createdAt ?? Date.now()),
+      });
+      toast({ title: t('receiptDownloaded'), description: receiptFilename(txResult.hash) });
     } catch (error) {
       showError(error);
     } finally {
@@ -396,11 +393,9 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
   };
 
   const worstCorridor = CORRIDORS.find(c => c.id === 'bank-wire');
-  // Marketing comparison is a separate USD example, not an XLM exchange quote.
-  const numAmount = 500;
-  const bestCorridor = getBestCorridor(CORRIDORS, numAmount);
-  const savingsAmount = worstCorridor ? calculateTotal(worstCorridor, numAmount) - calculateTotal(bestCorridor, numAmount) : 0;
-  const savingsPercent = worstCorridor ? (savingsAmount / calculateTotal(worstCorridor, numAmount)) * 100 : 0;
+  const bestCorridor = getBestCorridor(CORRIDORS, MARKETING_COMPARE_AMOUNT);
+  const savingsAmount = worstCorridor ? calculateTotal(worstCorridor, MARKETING_COMPARE_AMOUNT) - calculateTotal(bestCorridor, MARKETING_COMPARE_AMOUNT) : 0;
+  const savingsPercent = worstCorridor ? (savingsAmount / calculateTotal(worstCorridor, MARKETING_COMPARE_AMOUNT)) * 100 : 0;
 
   return (
     <div className="w-full max-w-4xl mx-auto py-8 px-4 relative z-20">
@@ -436,14 +431,14 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
         <p className="text-sm text-muted-foreground">
           {t('testnetNotice')}
         </p>
-        <motion.div 
+        <motion.div
           layout
           className="bg-card/90 backdrop-blur-xl border border-border p-6 rounded-2xl shadow-xl flex flex-col md:flex-row gap-4 items-end"
         >
           <div className="w-full md:w-1/3 flex flex-col gap-2">
             <label htmlFor="transfer-amount" className="text-sm text-muted-foreground font-medium">{t('sendAmount')}</label>
             <div className="relative">
-              <input 
+              <input
                 id="transfer-amount"
                 type="number"
                 min="0.0000001"
@@ -459,10 +454,10 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
               </div>
             </div>
           </div>
-          
+
           <div className="w-full md:w-1/2 flex flex-col gap-2">
             <label htmlFor="transfer-recipient" className="text-sm text-muted-foreground font-medium">{t('recipientAddress')}</label>
-            <input 
+            <input
               id="transfer-recipient"
               type="text"
               autoCapitalize="none"
@@ -478,7 +473,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
 
           <div className="w-full md:w-auto">
             {step === 'idle' ? (
-              <button 
+              <button
                 onClick={handleStart}
                 disabled={!amount || !recipient || Number(amount) <= 0}
                 className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
@@ -486,7 +481,7 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
                 {t('heroCTA')} <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
               </button>
             ) : (
-              <button 
+              <button
                 onClick={resetPipeline}
                 disabled={isSubmitting || isPolling}
                 className="w-full md:w-auto bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium py-3 px-6 rounded-lg transition-all"
@@ -501,281 +496,74 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
         <AnimatePresence>
           {step !== 'idle' && (
             <div className="flex flex-col gap-4">
-              
+
               {/* Agent 1: Rate-Scout */}
-              <AgentCard 
-                number="01" 
-                name={t('agent1Name')} 
+              <AgentCard
+                number="01"
+                name={t('agent1Name')}
                 desc={t('agent1Desc')}
                 isActive={step === 'step1'}
                 isComplete={step === 'step2' || step === 'step3' || step === 'done'}
               >
-                <div className="flex flex-col gap-4 pt-4">
-                  <p className="text-sm text-muted-foreground">{t('scanTableNotice')}</p>
-                  <div className="flex items-center gap-3 mb-2">
-                    {isScanning ? (
-                      <><Activity className="w-5 h-5 text-primary animate-pulse" /><span className="text-primary font-medium">{t('scanning')}</span></>
-                    ) : (
-                      <><CheckCircle className="w-5 h-5 text-emerald-500" /><span className="text-emerald-500 font-medium">{t('bestRoute')}</span></>
-                    )}
-                  </div>
-                  
-                  <div className="bg-card border border-border rounded-xl overflow-x-auto shadow-inner relative">
-                    {isScanning && (
-                      <motion.div 
-                        className="absolute inset-0 bg-primary/5 z-10 pointer-events-none"
-                        animate={{ x: ['-100%', '100%'] }}
-                        transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                      />
-                    )}
-                    <table className="w-full text-sm text-start min-w-[36rem]">
-                      <thead className="bg-muted text-muted-foreground border-b border-border">
-                        <tr>
-                          <th className="py-3 px-4 font-medium">{t('provider')}</th>
-                          <th className="py-3 px-4 font-medium">{t('fee')}</th>
-                          <th className="py-3 px-4 font-medium">{t('speed')}</th>
-                          <th className="py-3 px-4 font-medium text-end">{t('total')}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <AnimatePresence>
-                          {scannedCorridors.map((c, i) => {
-                            const isWinner = !isScanning && c.id === bestCorridor.id;
-                            return (
-                              <motion.tr 
-                                key={c.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.1 }}
-                                className={`border-b border-border/50 last:border-0 ${isWinner ? 'bg-primary/10' : ''}`}
-                              >
-                                <td className="py-4 px-4 flex items-center gap-2">
-                                  <span className={`font-medium ${isWinner ? 'text-primary' : 'text-foreground'}`}>{t(c.nameKey)}</span>
-                                  {isWinner && <span className="bg-amber-500/20 text-amber-500 text-xs px-2 py-0.5 rounded-full font-bold uppercase hidden md:inline-block">{t('bestRouteBadge')}</span>}
-                                </td>
-                                <td className="py-4 px-4 text-muted-foreground">{c.feePercent}% {c.feeFixed > 0 ? `+ $${c.feeFixed}` : ''}</td>
-                                <td className="py-4 px-4 text-muted-foreground">{formatSpeed(c.speedMinutes)}</td>
-                                <td className={`py-4 px-4 text-end font-semibold ${isWinner ? 'text-amber-500' : ''}`}>
-                                  ${calculateTotal(c, numAmount).toFixed(2)}
-                                </td>
-                              </motion.tr>
-                            );
-                          })}
-                        </AnimatePresence>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {!isScanning && (
-                    <div className="flex flex-col md:flex-row items-center justify-between mt-4 gap-4">
-                      <div className="text-amber-500 font-medium flex items-center gap-2">
-                        <Activity className="w-5 h-5" />
-                        {t('save')} ${savingsAmount.toFixed(2)} ({savingsPercent.toFixed(0)}%) {t('vsBankWire')}
-                      </div>
-                      {step === 'step1' && (
-                        <button 
-                          onClick={handleStep1Proceed}
-                          className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(124,58,237,0.3)]"
-                        >
-                          {t('proceedRoute')} <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <CorridorScanTable
+                  isScanning={isScanning}
+                  scannedCorridors={scannedCorridors}
+                  bestCorridor={bestCorridor}
+                  savingsAmount={savingsAmount}
+                  savingsPercent={savingsPercent}
+                  showProceed={step === 'step1'}
+                  onProceed={handleStep1Proceed}
+                />
               </AgentCard>
 
               {/* Agent 2: Router */}
               {(step === 'step2' || step === 'step3' || step === 'done') && (
-                <AgentCard 
-                  number="02" 
-                  name={t('agent2Name')} 
+                <AgentCard
+                  number="02"
+                  name={t('agent2Name')}
                   desc={t('agent2Desc')}
                   isActive={step === 'step2'}
                   isComplete={step === 'step3' || step === 'done'}
                 >
-                  <div className="flex flex-col gap-5 pt-4">
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-center gap-3">
-                        {isResolving ? <Loader2 className="w-5 h-5 animate-spin text-primary" /> : <CheckCircle className="w-5 h-5 text-emerald-500" />}
-                        <span className={isResolving ? 'text-amber-500' : 'text-emerald-500'}>{t('resolvingFederation')}</span>
-                      </div>
-                      {resolvedKey && (
-                        <div className="bg-muted border border-border rounded-lg p-3 ms-8 text-sm font-mono text-muted-foreground flex justify-between items-center break-all">
-                          {resolvedKey}
-                        </div>
-                      )}
-
-                      {!isResolving && (
-                        <div className="flex items-center gap-3 mt-2">
-                          {isBuilding ? <Loader2 className="w-5 h-5 animate-spin text-primary" /> : <CheckCircle className="w-5 h-5 text-emerald-500" />}
-                          <span className={isBuilding ? 'text-amber-500' : 'text-emerald-500'}>{t('buildingTx')}</span>
-                        </div>
-                      )}
-
-                      {txBuilt && (
-                        <motion.div 
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          className="bg-card border border-border rounded-xl p-5 ms-8 flex flex-col gap-4 mt-2 shadow-inner"
-                        >
-                          <h3 className="text-lg font-semibold">{t('reviewTransfer')}</h3>
-                          <dl className="grid gap-3 text-sm">
-                            <div><dt className="text-muted-foreground">{t('sendAmount')}</dt><dd className="text-2xl font-bold" dir="ltr">{amount} XLM</dd></div>
-                            <div><dt className="text-muted-foreground">{t('transferNetwork')}</dt><dd>Stellar Testnet</dd></div>
-                            <div><dt className="text-muted-foreground">{t('transferFrom')}</dt><dd className="font-mono break-all" dir="ltr">{senderKey ?? t('connectWallet')}</dd></div>
-                            <div><dt className="text-muted-foreground">{t('transferTo')}</dt><dd className="font-mono break-all" dir="ltr">{resolvedKey}</dd></div>
-                          </dl>
-                          <p className="text-sm text-muted-foreground">{t('reviewTransferHelp')}</p>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <span className="text-xs text-muted-foreground block mb-1">{t('contractAddress')}</span>
-                              <span className="text-sm font-mono">{CONTRACT_ID().slice(0, 10)}...{CONTRACT_ID().slice(-4)}</span>
-                            </div>
-                            <div>
-                              <span className="text-xs text-muted-foreground block mb-1">{t('fee')}</span>
-                              <span className="text-sm font-medium">Review the transaction and network fee in Freighter</span>
-                            </div>
-                            <div>
-                              <span className="text-xs text-muted-foreground block mb-1">Est. {t('speed')}</span>
-                              <span className="text-sm font-medium">~5 {t('seconds')}</span>
-                            </div>
-                          </div>
-
-                          <div className="border-t border-border/50 pt-4 mt-2 flex flex-col md:flex-row items-center justify-between gap-4">
-                            {walletStatus === 'freighter' ? (
-                              senderKey ? (
-                                <div className="text-emerald-500 text-sm flex items-center gap-2"><CheckCircle className="w-4 h-4"/> {t('freighterConnected')}</div>
-                              ) : (
-                                <button onClick={handleConnectWallet} className="text-sm bg-secondary hover:bg-secondary/80 px-4 py-2 rounded-lg font-medium transition-colors">
-                                  {t('connectWallet')}
-                                </button>
-                              )
-                            ) : walletStatus === 'mobile' ? (
-                              <div className="text-amber-500 text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4"/> {t('freighterMobile')}</div>
-                            ) : (
-                              <div className="text-destructive text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4"/> {t('installFreighter')}</div>
-                            )}
-
-                            {step === 'step2' && (
-                              <button 
-                                onClick={handleSubmitTx}
-                                disabled={!senderKey || !resolvedKey || walletStatus !== 'freighter' || isSubmitting || historyUnavailable}
-                                className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                              >
-                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : t('signTransfer')}
-                                {!isSubmitting && <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />}
-                              </button>
-                            )}
-                          </div>
-                        </motion.div>
-                      )}
-                    </div>
-                  </div>
+                  <RouterReviewCard
+                    isResolving={isResolving}
+                    resolvedKey={resolvedKey}
+                    isBuilding={isBuilding}
+                    txBuilt={txBuilt}
+                    amount={amount}
+                    senderKey={senderKey}
+                    walletStatus={walletStatus}
+                    showSignButton={step === 'step2'}
+                    isSubmitting={isSubmitting}
+                    isHistoryUnavailable={historyUnavailable}
+                    onConnectWallet={handleConnectWallet}
+                    onSubmit={handleSubmitTx}
+                  />
                 </AgentCard>
               )}
 
               {/* Agent 3: Reconciler */}
               {(step === 'step3' || step === 'done') && (
-                <AgentCard 
-                  number="03" 
-                  name={t('agent3Name')} 
+                <AgentCard
+                  name={t('agent3Name')}
                   desc={t('agent3Desc')}
                   isActive={step === 'step3'}
                   isComplete={step === 'done'}
+                  number="03"
                 >
-                  <div className="flex flex-col gap-4 pt-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      {isPolling ? (
-                        <><Activity className="w-5 h-5 text-primary animate-pulse" /><span className="text-primary font-medium">{t('awaitingSettlement')}</span></>
-                      ) : step === 'done' ? (
-                        <><CheckCircle className="w-5 h-5 text-emerald-500" /><span className="text-emerald-500 font-medium">{t('settled')}</span></>
-                      ) : (
-                        <span className="text-amber-500">{t('confirmUnavailable')}</span>
-                      )}
-                    </div>
-
-                    {txResult && step === 'step3' && (
-                      <div className="flex flex-wrap gap-3 text-sm">
-                        <a href={`https://stellar.expert/explorer/testnet/tx/${txResult.hash}`} target="_blank" rel="noreferrer" className="text-primary underline">{t('viewSubmittedTx')}</a>
-                        {!isPolling && <button onClick={handleRetrySettlement} className="text-primary underline">{t('checkConfirmationAgain')}</button>}
-                      </div>
-                    )}
-                    {txResult && step === 'done' && (
-                      <motion.div 
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-gradient-to-br from-primary/20 to-[#111118] border border-primary/30 rounded-2xl p-6 relative overflow-hidden"
-                      >
-                        <div className="absolute top-0 end-0 p-4 opacity-10 pointer-events-none">
-                          <CheckCircle className="w-32 h-32" />
-                        </div>
-                        
-                        <h3 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
-                          <span className="bg-emerald-500/20 text-emerald-500 p-2 rounded-full"><Check className="w-6 h-6" /></span>
-                          {t('paymentComplete')}
-                        </h3>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-                          <div className="flex flex-col gap-1">
-                            <span className="text-sm text-muted-foreground">{t('txHash')}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-foreground bg-black/40 px-2 py-1 rounded border border-white/5">{txResult.hash.slice(0, 16)}...</span>
-                              <button onClick={handleCopyHash} className="text-muted-foreground hover:text-foreground transition-colors p-1" title={copied ? 'Copied!' : 'Copy full hash'}>
-                                {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                              </button>
-                              <a href={`https://stellar.expert/explorer/testnet/tx/${txResult.hash}`} target="_blank" rel="noreferrer" className="text-primary hover:text-primary/80 transition-colors p-1" title={t('viewOnStellar')}>
-                                <ExternalLink className="w-4 h-4" />
-                              </a>
-                            </div>
-                          </div>
-                          
-                          <div className="flex flex-col gap-1">
-                            <span className="text-sm text-muted-foreground">{t('settlementTime')}</span>
-                            <span className="font-medium text-lg">{(txResult.settlementTimeMs / 1000).toFixed(1)} {t('seconds')}</span>
-                          </div>
-                          
-                          <div className="flex flex-col gap-1">
-                            <span className="text-sm text-muted-foreground">{t('feePaid')}</span>
-                            <span className="font-medium text-lg">{txResult.feePaid}</span>
-                          </div>
-                          
-                          <div className="flex flex-col gap-1">
-                            <span className="text-sm text-muted-foreground">{t('amountSubmitted')}</span>
-                            <span className="font-bold text-lg">{amount} XLM (Testnet)</span>
-                          </div>
-                        </div>
-
-                        <div className="mt-6 pt-5 border-t border-white/10 flex flex-col sm:flex-row gap-3 relative z-10">
-                          <button
-                            onClick={resetPipeline}
-                            className="flex-1 inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-lg transition-all"
-                          >
-                            <RefreshCw className="w-4 h-4" />
-                            {t('sendAnother')}
-                          </button>
-                          <button
-                            onClick={handleDownloadReceipt}
-                            disabled={isDownloadingReceipt}
-                            aria-busy={isDownloadingReceipt}
-                            className="flex-1 inline-flex items-center justify-center gap-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-medium py-3 px-6 rounded-lg transition-all"
-                          >
-                            <Download className="w-4 h-4" />
-                            {t('downloadReceipt')}
-                          </button>
-                          {senderKey && (
-                            <a
-                              href="#transfer-history"
-                              className="flex-1 inline-flex items-center justify-center gap-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium py-3 px-6 rounded-lg transition-all"
-                            >
-                              <History className="w-4 h-4" />
-                              {t('viewHistory')}
-                            </a>
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
+                  <ReconcilerResultCard
+                    txResult={txResult}
+                    amount={amount}
+                    step={step}
+                    isPolling={isPolling}
+                    copied={copied}
+                    isDownloadingReceipt={isDownloadingReceipt}
+                    showHistoryLink={Boolean(senderKey)}
+                    onCopyHash={handleCopyHash}
+                    onRetrySettlement={handleRetrySettlement}
+                    onDownloadReceipt={handleDownloadReceipt}
+                    onReset={resetPipeline}
+                  />
                 </AgentCard>
               )}
             </div>
@@ -783,54 +571,5 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
         </AnimatePresence>
       </div>
     </div>
-  );
-}
-
-function AgentCard({ 
-  number, name, desc, isActive, isComplete, children 
-}: { 
-  number: string; name: string; desc: string; isActive: boolean; isComplete: boolean; children: React.ReactNode 
-}) {
-  let statusColor = 'bg-muted border-border';
-  if (isActive) statusColor = 'bg-card border-primary ring-1 ring-primary shadow-[0_0_20px_rgba(124,58,237,0.15)]';
-  if (isComplete) statusColor = 'bg-card border-emerald-500/50';
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`rounded-2xl transition-[border-color,box-shadow,background-color] duration-300 overflow-hidden ${statusColor} backdrop-blur-sm relative`}
-    >
-      <div className="p-5 md:p-6 flex flex-col">
-        <div className="flex items-start gap-4">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 transition-colors ${isActive ? 'bg-primary text-primary-foreground' : isComplete ? 'bg-emerald-500/20 text-emerald-500' : 'bg-secondary text-muted-foreground'}`}>
-            {number}
-          </div>
-          <div className="flex-1">
-            <h3 className="text-lg font-bold text-foreground flex items-center gap-3">
-              {name}
-              {isActive && <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />}
-              {isComplete && <span className="w-2 h-2 rounded-full bg-emerald-500" />}
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1">{desc}</p>
-          </div>
-        </div>
-        
-        <AnimatePresence initial={false}>
-          {(isActive || isComplete) && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="pt-2">
-                {children}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </motion.div>
   );
 }
