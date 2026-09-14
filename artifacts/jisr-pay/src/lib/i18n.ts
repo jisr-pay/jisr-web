@@ -100,6 +100,7 @@ export const strings = {
     savings: 'You saved vs. traditional',
     // Errors
     installFreighter: 'Please install the Freighter wallet extension',
+    freighterDeclined: 'Connection request declined — approve it in Freighter to continue.',
     freighterMobile: 'Freighter not available on mobile — tap to open web version',
     txFailed: 'Transaction failed',
     // General
@@ -287,6 +288,7 @@ export const strings = {
     savings: 'وفرت مقارنة بالتقليدي',
     // Errors
     installFreighter: 'الرجاء تثبيت إضافة محفظة Freighter',
+    freighterDeclined: 'تم رفض طلب الاتصال — وافق عليه في Freighter للمتابعة.',
     freighterMobile: 'Freighter غير متوفر على الجوال — انقر لفتح النسخة الإلكترونية',
     txFailed: 'فشلت المعاملة',
     // General

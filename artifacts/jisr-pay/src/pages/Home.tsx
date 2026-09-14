@@ -5,6 +5,7 @@ import { AgentPipeline } from '@/components/AgentPipeline';
 import { TransferHistory } from '@/components/TransferHistory';
 import { Wallet, Globe, ArrowLeft } from 'lucide-react';
 import { connectFreighter } from '@/lib/stellar';
+import { connectCopy } from '@/lib/wallet-connect';
 import { CONTRACT_ID } from '@/lib/corridors';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
@@ -23,9 +24,9 @@ export default function Home() {
     connectingRef.current = true;
     setConnecting(true);
     try {
-      const key = await connectFreighter();
-      if (key) setWalletKey(key);
-      else toast({ title: t('installFreighter'), variant: 'destructive' });
+      const res = await connectFreighter();
+      if (res.outcome === 'connected') setWalletKey(res.address);
+      else toast({ title: t(connectCopy(res.outcome)), variant: 'destructive' });
     } catch (error) {
       toast({ title: toUserMessage(error), variant: 'destructive' });
     } finally {
