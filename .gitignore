@@ -57,3 +57,6 @@ Thumbs.db
 # Local assistant metadata and backups of rewritten contributor history.
 .freebuff/
 *.bundle
+
+# npm pack artifacts
+*.tgz
