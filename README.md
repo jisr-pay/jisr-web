@@ -1,4 +1,4 @@
-# Jisr Pay 🌉
+# Jisr Pay
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/jisr-pay/.github/main/assets/logo.svg" alt="Jisr Pay" width="400">
