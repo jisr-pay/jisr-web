@@ -1,10 +1,11 @@
 // Direct contract tests for buildAndSubmitPayment.
 //
-// Only the Soroban RPC boundary is patched; the transaction machinery runs for
-// real (account, build, simulated prepare, wallet signing, hashing) through
-// the PaymentWallet port. Each named failure path pins its AppError code, its
-// user-facing message, and the observable callback state — this suite is the
-// executable contract the backend consumes.
+// The Soroban RPC boundary arrives through the injectable `options.rpcServer`
+// parameter, so each test supplies a plain fake object — no prototype
+// patching, no real network. Everything else runs for real: account, build,
+// simulated prepare, wallet signing through the PaymentWallet port, and the
+// real SHA-256 transaction hash. Each named failure path pins its AppError
+// code, its user-facing message, and the observable callback state.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -42,26 +43,17 @@ const wallet: PaymentWallet = {
   },
 };
 
-type RpcMethod = 'getAccount' | 'prepareTransaction' | 'sendTransaction' | 'getTransaction';
-
-/** Installs RPC overrides for one test and restores the originals after it. */
-function withRpc(overrides: Partial<Record<RpcMethod, (...args: never[]) => unknown>>, run: () => Promise<void>) {
-  const originals = new Map<string, unknown>();
-  const proto = rpc.Server.prototype as unknown as Record<string, unknown>;
-  for (const [name, impl] of Object.entries(overrides)) {
-    originals.set(name, proto[name]);
-    proto[name] = impl;
-  }
-  return Promise.resolve()
-    .then(run)
-    .finally(() => {
-      for (const [name, impl] of originals) proto[name] = impl;
-    });
-}
-
 const account = () => new Account(sender.publicKey(), '100');
 
 const getTx = (status: string) => ({ status }) as unknown as rpc.Api.GetTransactionResponse;
+
+/** The four RPC methods buildAndSubmitPayment uses; fakes override exactly these. */
+type RpcOverrides = Partial<Record<'getAccount' | 'prepareTransaction' | 'sendTransaction' | 'getTransaction', (...args: never[]) => unknown>>;
+
+/** A test double for the Soroban RPC server: just the overridden methods. */
+function fakeServer(overrides: RpcOverrides = {}): rpc.Server {
+  return overrides as unknown as rpc.Server;
+}
 
 interface Harness {
   pending: { hash: string; feePaid: string; settlementTimeMs: number; ledger: number }[];
@@ -76,7 +68,7 @@ const callbacks = (h: Harness): PaymentCallbacks => ({
 // The RPC echoes the transaction's own hash on send. Capture it at prepare
 // time so fakes can respond with the real value, like soroban-rpc does.
 let txHash = '';
-const happyPath: Partial<Record<RpcMethod, (...args: never[]) => unknown>> = {
+const happyPath: RpcOverrides = {
   getAccount: async () => account(),
   prepareTransaction: async (tx) => {
     txHash = (tx as unknown as { hash: () => Buffer }).hash().toString('hex');
@@ -86,9 +78,9 @@ const happyPath: Partial<Record<RpcMethod, (...args: never[]) => unknown>> = {
   getTransaction: async () => getTx('SUCCESS'),
 };
 
-/** Runs one payment through the happy path (or per-test RPC overrides). */
-function pay(h: Harness, amount = '1', w: PaymentWallet = wallet) {
-  return buildAndSubmitPayment(w, config, sender.publicKey(), recipient.publicKey(), amount, callbacks(h));
+/** Runs one payment through the supplied RPC fake. */
+function pay(h: Harness, server: rpc.Server = fakeServer(happyPath), amount = '1', w: PaymentWallet = wallet) {
+  return buildAndSubmitPayment(w, config, sender.publicKey(), recipient.publicKey(), amount, callbacks(h), { rpcServer: server });
 }
 
 function assertAppError(promise: Promise<unknown>, code: string, messagePart: string) {
@@ -109,7 +101,7 @@ test('decimal-string amounts reach the contract call as exact integer stroops', 
   ];
   for (const { amount, stroops } of cases) {
     let sentAmount: bigint | undefined;
-    await withRpc({
+    await pay({ pending: [], failures: [] }, fakeServer({
       ...happyPath,
       prepareTransaction: async (tx) => {
         const op = (tx as unknown as { operations: Array<{ type: string; func: { invokeContract: () => { args: () => unknown[] } } }> }).operations[0];
@@ -117,10 +109,8 @@ test('decimal-string amounts reach the contract call as exact integer stroops', 
         sentAmount = scValToNative(op.func.invokeContract().args()[4]) as bigint;
         return tx;
       },
-    }, async () => {
-      await pay({ pending: [], failures: [] }, amount);
-      assert.equal(sentAmount, stroops);
-    });
+    }), amount);
+    assert.equal(sentAmount, stroops);
   }
 });
 
@@ -133,9 +123,12 @@ test('invalid amounts are rejected before any network activity', async () => {
     ['', 'positive decimal'],
   ] as const) {
     let networkTouched = false;
-    await withRpc({
-      getAccount: async () => { networkTouched = true; return account(); },
-    }, () => assert.rejects(pay({ pending: [], failures: [] }, amount), new RegExp(message)));
+    await assert.rejects(
+      pay({ pending: [], failures: [] }, fakeServer({
+        getAccount: async () => { networkTouched = true; return account(); },
+      }), amount),
+      new RegExp(message),
+    );
     assert.equal(networkTouched, false);
   }
 });
@@ -146,9 +139,12 @@ test('wrong-network wallets abort before building anything', async () => {
     async signTransaction() { throw new Error('should not be reached'); },
   };
   let accountFetched = false;
-  await withRpc({
-    getAccount: async () => { accountFetched = true; return account(); },
-  }, () => assertAppError(pay({ pending: [], failures: [] }, '1', strictWallet), 'WRONG_NETWORK', 'wrong network'));
+  await assertAppError(
+    pay({ pending: [], failures: [] }, fakeServer({
+      getAccount: async () => { accountFetched = true; return account(); },
+    }), '1', strictWallet),
+    'WRONG_NETWORK', 'wrong network',
+  );
   assert.equal(accountFetched, false, 'network guard must run before getAccount');
 });
 
@@ -161,10 +157,13 @@ test('signing rejection surfaces as USER_REJECTED with nothing recorded and noth
   };
   const h: Harness = { pending: [], failures: [] };
   let sent = false;
-  await withRpc({
-    ...happyPath,
-    sendTransaction: async () => { sent = true; return { status: 'PENDING', hash: txHash }; },
-  }, () => assertAppError(pay(h, '1', refusingWallet), 'USER_REJECTED', 'declined'));
+  await assertAppError(
+    pay(h, fakeServer({
+      ...happyPath,
+      sendTransaction: async () => { sent = true; return { status: 'PENDING', hash: txHash }; },
+    }), '1', refusingWallet),
+    'USER_REJECTED', 'declined',
+  );
   assert.equal(sent, false, 'nothing may be broadcast after a refusal');
   assert.equal(h.pending.length, 0);
   assert.equal(h.failures.length, 0);
@@ -172,10 +171,10 @@ test('signing rejection surfaces as USER_REJECTED with nothing recorded and noth
 
 test('RPC-rejected submission calls onFailed exactly once and throws CONTRACT_FAILED', async () => {
   const h: Harness = { pending: [], failures: [] };
-  await withRpc({
-    ...happyPath,
-    sendTransaction: async () => ({ status: 'ERROR', hash: txHash }),
-  }, () => assertAppError(pay(h), 'CONTRACT_FAILED', 'rejected by Soroban RPC'));
+  await assertAppError(
+    pay(h, fakeServer({ ...happyPath, sendTransaction: async () => ({ status: 'ERROR', hash: txHash }) })),
+    'CONTRACT_FAILED', 'rejected by Soroban RPC',
+  );
   assert.equal(h.pending.length, 1, 'hash is journaled before broadcast');
   // onFailed receives the journaled (real transaction) hash, not a send artifact.
   assert.deepEqual(h.failures, [h.pending[0].hash]);
@@ -183,67 +182,66 @@ test('RPC-rejected submission calls onFailed exactly once and throws CONTRACT_FA
 
 test('a lost submit response preserves the pending hash and throws TIMEOUT without calling onFailed', async () => {
   const h: Harness = { pending: [], failures: [] };
-  await withRpc({
-    ...happyPath,
-    sendTransaction: async () => { throw new Error('fetch failed'); },
-  }, () => assertAppError(pay(h), 'TIMEOUT', 'Check the transaction before sending again'));
+  await assertAppError(
+    pay(h, fakeServer({ ...happyPath, sendTransaction: async () => { throw new Error('fetch failed'); } })),
+    'TIMEOUT', 'Check the transaction before sending again',
+  );
   assert.equal(h.pending.length, 1, 'pending record enables recovery');
   assert.equal(h.failures.length, 0, 'a lost response is not a definitive failure');
 });
 
 test('on-chain failure calls onFailed and throws CONTRACT_FAILED', async () => {
   const h: Harness = { pending: [], failures: [] };
-  await withRpc({
-    ...happyPath,
-    getTransaction: async () => getTx('FAILED'),
-  }, () => assertAppError(pay(h), 'CONTRACT_FAILED', 'failed on-chain'));
+  await assertAppError(
+    pay(h, fakeServer({ ...happyPath, getTransaction: async () => getTx('FAILED') })),
+    'CONTRACT_FAILED', 'failed on-chain',
+  );
   assert.deepEqual(h.failures, [h.pending[0].hash]);
 });
 
 test('unfunded senders map to NOT_FUNDED with a friendbot link instead of a raw RPC error', async () => {
-  await withRpc({
-    getAccount: async () => { throw new Error('The resource at the URL you requested was not found.'); },
-  }, () => assertAppError(pay({ pending: [], failures: [] }), 'NOT_FUNDED', 'friendbot'));
+  await assertAppError(
+    pay({ pending: [], failures: [] }, fakeServer({
+      getAccount: async () => { throw new Error('The resource at the URL you requested was not found.'); },
+    })),
+    'NOT_FUNDED', 'friendbot',
+  );
 });
 
 test('success returns the real hash, prepared fee and ledger; pending placeholders stay honest zeros', async () => {
   const h: Harness = { pending: [], failures: [] };
-  await withRpc({
+  const result = await pay(h, fakeServer({
     ...happyPath,
     getTransaction: async () => ({ status: 'SUCCESS', ledger: 4651575 }) as unknown as rpc.Api.GetTransactionResponse,
-  }, async () => {
-    const result = await pay(h);
-    assert.match(result.hash, /^[a-f0-9]{64}$/, 'hash is the real SHA-256 of the signed transaction');
-    assert.equal(result.ledger, 4651575);
-    assert.equal(result.feePaid, '0.0000100 XLM', 'fee from the prepared transaction (BASE_FEE), 7 decimals');
-    assert.equal(h.pending.length, 1);
-    assert.equal(h.failures.length, 0);
-    const pending = h.pending[0];
-    assert.equal(pending.hash, result.hash, 'the journaled hash is the confirmed hash');
-    assert.deepEqual(
-      { ledger: pending.ledger, settlementTimeMs: pending.settlementTimeMs },
-      { ledger: 0, settlementTimeMs: 0 },
-      'pending placeholders are honest zeros, not guesses',
-    );
-  });
+  }));
+  assert.match(result.hash, /^[a-f0-9]{64}$/, 'hash is the real SHA-256 of the signed transaction');
+  assert.equal(result.ledger, 4651575);
+  assert.equal(result.feePaid, '0.0000100 XLM', 'fee from the prepared transaction (BASE_FEE), 7 decimals');
+  assert.equal(h.pending.length, 1);
+  assert.equal(h.failures.length, 0);
+  const pending = h.pending[0];
+  assert.equal(pending.hash, result.hash, 'the journaled hash is the confirmed hash');
+  assert.deepEqual(
+    { ledger: pending.ledger, settlementTimeMs: pending.settlementTimeMs },
+    { ledger: 0, settlementTimeMs: 0 },
+    'pending placeholders are honest zeros, not guesses',
+  );
 });
 
 test('a TransactionResult maps into a valid native-XLM SavedTransfer with contractId null', async () => {
   const h: Harness = { pending: [], failures: [] };
-  await withRpc(happyPath, async () => {
-    const result = await pay(h);
-    // The exact mapping the web app performs for native XLM registrations.
-    const record = {
-      hash: result.hash,
-      network: 'TESTNET',
-      asset: 'XLM',
-      sender: sender.publicKey(),
-      recipient: recipient.publicKey(),
-      amount: '1',
-      contractId: null,
-      submittedAt: new Date().toISOString(),
-      status: 'pending',
-    } as const;
-    assert.ok(isSavedTransfer(record), 'native-XLM record shape (contractId: null) must be valid');
-  });
+  const result = await pay(h);
+  // The exact mapping the web app performs for native XLM registrations.
+  const record = {
+    hash: result.hash,
+    network: 'TESTNET',
+    asset: 'XLM',
+    sender: sender.publicKey(),
+    recipient: recipient.publicKey(),
+    amount: '1',
+    contractId: null,
+    submittedAt: new Date().toISOString(),
+    status: 'pending',
+  } as const;
+  assert.ok(isSavedTransfer(record), 'native-XLM record shape (contractId: null) must be valid');
 });
