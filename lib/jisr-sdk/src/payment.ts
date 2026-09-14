@@ -77,8 +77,10 @@ export async function buildAndSubmitPayment(
   recipientKey: string,
   amountXLM: string,
   callbacks: PaymentCallbacks,
+  /** Optional Soroban RPC override — lets callers (tests, alternative transports) supply the server instead of reaching into the prototype. */
+  options: { rpcServer?: rpc.Server } = {},
 ): Promise<TransactionResult> {
-  const server = new rpc.Server(network.rpcUrl);
+  const server = options.rpcServer ?? new rpc.Server(network.rpcUrl);
 
   // Validate the amount before anything network-related.
   const stroops = parseAmountToStroops(amountXLM);
