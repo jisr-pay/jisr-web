@@ -26,19 +26,21 @@ import {
   type TransferSettlement,
 } from '@workspace/jisr-sdk';
 import { networkConfig } from './network-config.ts';
+import { interpretConnectResponse, isDeclineError, type ConnectResult } from './wallet-connect.ts';
 
 const log = createLogger('stellar');
 
 // Prompts the user to grant access and returns their public key. This call is
 // what makes the Freighter popup appear, so it must run directly on the user's
-// click. Returns null (rather than throwing) so callers can show a message.
-export async function connectFreighter(): Promise<string | null> {
+// click. Never throws — callers render the outcome through ConnectResult.
+export async function connectFreighter(): Promise<ConnectResult> {
   try {
     const res = await requestAccess();
-    if (res.error || !res.address) return null;
-    return res.address;
-  } catch {
-    return null;
+    return interpretConnectResponse(res);
+  } catch (e) {
+    // Older extension versions reject the promise instead of resolving with an
+    // apiError; normalize that path so declines still get their own copy.
+    return isDeclineError(e) ? { outcome: 'declined' } : { outcome: 'unavailable' };
   }
 }
 

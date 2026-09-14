@@ -21,6 +21,7 @@ import {
   type SavedTransfer,
 } from '@workspace/jisr-sdk';
 import { copyText } from '@/lib/clipboard';
+import { connectCopy } from '@/lib/wallet-connect';
 import { generateReceiptPDF, receiptFilename } from '@/lib/receipt';
 import { useTransferHistory } from '@/hooks/useTransferHistory';
 import { AgentCard } from './pipeline/AgentCard';
@@ -241,12 +242,12 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
   };
 
   const handleConnectWallet = async () => {
-    const key = await connectFreighter();
-    if (key) {
-      setSenderKey(key);
+    const res = await connectFreighter();
+    if (res.outcome === 'connected') {
+      setSenderKey(res.address);
       setError(null);
     } else {
-      setError('Could not connect Freighter. Unlock the extension, approve the connection request, and try again.');
+      setError(t(connectCopy(res.outcome)));
     }
   };
 
