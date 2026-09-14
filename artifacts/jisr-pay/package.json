@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --experimental-strip-types --test src/lib/clipboard.test.ts src/lib/fees.test.ts src/lib/i18n.test.ts src/lib/corridors.test.ts src/lib/receipt-payload.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/clipboard.test.ts src/lib/fees.test.ts src/lib/i18n.test.ts src/lib/wallet-connect.test.ts src/lib/corridors.test.ts src/lib/receipt-payload.test.ts",
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
     "build": "vite build --config vite.config.ts",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
