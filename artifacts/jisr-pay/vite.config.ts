@@ -22,6 +22,9 @@ const basePath = process.env.BASE_PATH ?? '/';
 const federationProxyTarget =
   process.env.VITE_FEDERATION_API_BASE?.trim() || 'https://stellar-tags-production.up.railway.app';
 const federationProxy = {
+  ...(process.env.WALLET_API_TARGET ? {
+    '/v1/wallet': { target: process.env.WALLET_API_TARGET, changeOrigin: true },
+  } : {}),
   '/api/federation': {
     target: federationProxyTarget,
     changeOrigin: true,
