@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { lookupSettlement } from '@/lib/stellar';
 import { applySettlement, settlementDurationMs, toUserMessage, type SavedTransfer } from '@workspace/jisr-sdk';
 import { generateReceiptPDF } from '@/lib/receipt';
+import { RemoteTransferHistory } from './RemoteTransferHistory';
 
 export function TransferHistory({ walletKey }: { walletKey: string | null }) {
   const { t, lang } = useI18nContext();
@@ -83,6 +84,8 @@ export function TransferHistory({ walletKey }: { walletKey: string | null }) {
             </li>
           ))}
         </ol>
+        {import.meta.env.VITE_REMOTE_HISTORY_ENABLED === 'true' && walletKey &&
+          <RemoteTransferHistory key={walletKey} walletKey={walletKey} localTransfers={transfers} onRestore={recordTransfer} />}
       </div>
     </section>
   );
