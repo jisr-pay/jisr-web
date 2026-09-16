@@ -25,7 +25,7 @@ Jisr-Pay operates using a pipeline of three specialized, autonomous AI agents wo
 * **Deployment**: Vercel.
 
 ## 🌐 Live Demo & Testing
-**Live URL**: [Insert your Vercel URL here]
+**Live URL**: [https://jisr-pay.vercel.app](https://jisr-pay.vercel.app)
 
 ### How to test:
 1. Install the **Freighter Wallet** extension and switch it to **Testnet**.
