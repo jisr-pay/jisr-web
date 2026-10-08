@@ -165,7 +165,7 @@ export class RemoteHistory {
     return { records, nextCursor: page.nextCursor as string | null };
   }
   async register(record: SavedTransfer) {
-    if (!isSavedTransfer(record) || record.sender !== this.address || record.contractId !== null) throw new HistoryError('invalid');
+    if (!isSavedTransfer(record) || record.sender !== this.address) throw new HistoryError('invalid');
     const { hash, network, asset, sender, recipient, amount, contractId, submittedAt } = record;
     const response = await this.json('/transfers', 'POST', { hash, network, asset, sender, recipient, amount, contractId, submittedAt });
     const remote = parseRemoteRecord(response.record, this.address);

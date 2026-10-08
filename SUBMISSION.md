@@ -49,3 +49,7 @@ authorization/security review, evidence verification, and operational acceptance
 ## October 8 router evidence
 
 A new independently tested router now has six passing Soroban tests, release WASM and a fresh [Testnet contract](https://stellar.expert/explorer/testnet/contract/CCGSUUQLWXKU6AZ6YKUNXLR7R6KLBYBG4AJGJ54XV4DC63AJ3LDVPNW4). The [authorized payment](https://stellar.expert/explorer/testnet/tx/6e79ed7847d34d19fb0d9f8bf43282cd583972537a41d539559a610a7f108910) produced exact recipient/treasury credits. This is independent contract evidence; current browser configuration, wallet acceptance and API contract-event verification remain separate gates.
+
+## October 8 integrated verification
+
+The browser now uses the SDK 0.4.0 verified payment flow, requires a positive wallet network report, and checks saved transfer identities on confirmation/recovery. Supported router transfers can be sent to wallet backup; the API independently verifies invocation and successful routed/native-token events. The SDK Node-signer demo and local HTTP API confirmed a fresh Testnet fee-split payment. Real Freighter, RTL/mobile and deployed-service acceptance remain separate checks; see docs/ROUTER_INTEGRATION.md.

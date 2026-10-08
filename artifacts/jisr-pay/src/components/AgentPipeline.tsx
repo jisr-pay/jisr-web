@@ -9,6 +9,7 @@ import {
   buildAndSubmitFreighterPayment, pollSettlement, TransactionResult
 } from '@/lib/stellar';
 import {
+  AppError,
   applySettlement,
   classifyError,
   createLogger,
@@ -293,7 +294,8 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
         setSettlementStatus('awaitingSettlement');
       }
 
-      const settled = await pollSettlement(result.hash, setSettlementStatus);
+      if (!activeTransferRef.current) throw new AppError('UNKNOWN', 'Pending transfer is unavailable.');
+      const settled = await pollSettlement(activeTransferRef.current, setSettlementStatus);
       if (activeTransferRef.current) saveResult(applySettlement(activeTransferRef.current, settled));
       if (!mountedRef.current) return;
       // Replace optimistic values with the confirmed on-chain fee and ledger
@@ -323,7 +325,8 @@ export function AgentPipeline({ walletKey: externalWalletKey, onWalletChange }: 
     setIsPolling(true);
     setError(null);
     try {
-      const settled = await pollSettlement(txResult.hash, setSettlementStatus);
+      if (!activeTransferRef.current) throw new AppError('UNKNOWN', 'Pending transfer is unavailable.');
+      const settled = await pollSettlement(activeTransferRef.current, setSettlementStatus);
       if (activeTransferRef.current) saveResult(applySettlement(activeTransferRef.current, settled));
       if (!mountedRef.current) return;
       setTxResult({ ...txResult, feePaid: settled.feeCharged, ledger: settled.ledger, createdAt: settled.createdAt,

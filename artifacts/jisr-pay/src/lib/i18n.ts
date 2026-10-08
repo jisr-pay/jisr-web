@@ -4,6 +4,10 @@ export type Lang = 'en' | 'ar';
 
 export const strings = {
   en: {
+    networkFee: 'Network fee',
+    routerFee: 'Router fee (included in amount)',
+    recipientReceives: 'Recipient receives',
+    networkFeeReview: 'Review the additional network fee in Freighter',
     remoteTitle: 'Wallet history backup',
     remoteNotice: 'Optional Testnet backup. Sign a login message to access this wallet’s records for 15 minutes. This does not authorize a payment. Signing out or reloading clears this browser’s session.',
     remoteLogin: 'Sign in with Freighter',
@@ -17,7 +21,7 @@ export const strings = {
     remoteConflict: 'The server has different details for this hash. Keep your local record and investigate before retrying.',
     remoteUnverified: 'The network could not verify this payment’s details. Keep your local record and check its status.',
     remoteUpload: 'Save local transfers to backup',
-    remoteUploadHelp: 'Only native XLM records from this wallet are eligible. Save sends the displayed transfer’s details to the server. Older contract-labelled records stay local.',
+    remoteUploadHelp: 'Native XLM and supported router payments from this wallet can be saved. The server checks payment evidence; unsupported or incomplete records stay local.',
     remoteSave: 'Save to backup',
     remoteSaved: 'Transfer record saved.',
     remoteRecords: 'Backed-up transfers',
@@ -192,6 +196,10 @@ export const strings = {
     beatCtaButton: 'Initialize Bridge Transfer',
   },
   ar: {
+    networkFee: 'رسوم الشبكة',
+    routerFee: 'رسوم الموجّه (ضمن المبلغ)',
+    recipientReceives: 'المبلغ الذي يتلقاه المستلم',
+    networkFeeReview: 'راجع رسوم الشبكة الإضافية في Freighter',
     remoteTitle: 'نسخة احتياطية لسجل المحفظة',
     remoteNotice: 'نسخ احتياطي اختياري على شبكة الاختبار. وقّع رسالة دخول للوصول إلى سجلات هذه المحفظة لمدة ١٥ دقيقة. لا يجيز ذلك أي دفعة. تسجيل الخروج أو إعادة تحميل الصفحة يمسح جلسة هذا المتصفح.',
     remoteLogin: 'تسجيل الدخول باستخدام Freighter',
@@ -205,7 +213,7 @@ export const strings = {
     remoteConflict: 'يحتوي الخادم على تفاصيل مختلفة لهذه المعاملة. احتفظ بسجلك المحلي وتحقق قبل إعادة المحاولة.',
     remoteUnverified: 'تعذّر التحقق من تفاصيل هذه الدفعة عبر الشبكة. احتفظ بسجلك المحلي وتحقق من حالتها.',
     remoteUpload: 'نسخ التحويلات المحلية احتياطيًا',
-    remoteUploadHelp: 'تُقبل فقط سجلات XLM الأصلية من هذه المحفظة. يرسل الحفظ تفاصيل التحويل المعروض إلى الخادم. تبقى السجلات القديمة الموسومة بعقد محلية.',
+    remoteUploadHelp: 'يمكن حفظ تحويلات XLM الأصلية ومدفوعات الموجّه المدعوم من هذه المحفظة. يتحقق الخادم من أدلة الدفع؛ وتبقى السجلات غير المدعومة أو غير المكتملة محلية.',
     remoteSave: 'حفظ نسخة احتياطية',
     remoteSaved: 'تم حفظ سجل التحويل.',
     remoteRecords: 'التحويلات المنسوخة احتياطيًا',
