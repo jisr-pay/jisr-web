@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { networkConfig } from '@/lib/network-config';
 import { useLocation } from 'wouter';
 import { useI18nContext } from '@/contexts/I18nContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -258,17 +259,17 @@ const flowSteps: { title: Bi; body: Bi }[] = [
 
 const contract: { label: Bi; value: string }[] = [
   { label: { en: 'Network / passphrase', ar: 'الشبكة / عبارة المرور' }, value: 'TESTNET — Test SDF Network ; September 2015' },
-  { label: { en: 'Router contract', ar: 'عقد الموجّه' }, value: 'CDNQ7OMHIFOLZHOKWQLOGDW7CF3DRMKXJC6OULNGNBWF4O4NO2NEIGER' },
-  { label: { en: 'Token address', ar: 'عنوان العملة' }, value: 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC' },
-  { label: { en: 'Platform treasury', ar: 'خزينة المنصة' }, value: 'GAAFWEZKDYPXLTQGKQ3F23TXWYQUDAYTDW7P7VUQSVJFW2GWC4Y6LWST' },
-  { label: { en: 'RPC', ar: 'RPC' }, value: 'https://soroban-testnet.stellar.org' },
+  { label: { en: 'Router contract', ar: 'عقد الموجّه' }, value: networkConfig().contractId },
+  { label: { en: 'Token address', ar: 'عنوان العملة' }, value: networkConfig().tokenAddress },
+  { label: { en: 'Platform treasury', ar: 'خزينة المنصة' }, value: networkConfig().treasuryAddress },
+  { label: { en: 'RPC', ar: 'RPC' }, value: networkConfig().rpcUrl },
   {
     label: { en: 'Observed entry (WASM)', ar: 'الواجهة المرصودة (WASM)' },
     value: 'route_payment(sender, recipient, platform_treasury, token_address, amount: i128)',
   },
   {
-    label: { en: 'Deployed WASM SHA-256', ar: 'مجمّع WASM المنشور SHA-256' },
-    value: 'ab6715d3611c45b0e2c7764e496635e28f141adb245392ac74bb80325c7164c2 (3401 bytes)',
+    label: { en: 'Default Testnet WASM SHA-256', ar: 'مجمّع WASM المنشور SHA-256' },
+    value: 'a1cd11b5dd9eaf6c625e7aa17cc2536e1c12fe71d1d6b2b315b6a5cfe2380784',
   },
 ];
 
