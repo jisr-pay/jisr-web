@@ -76,10 +76,12 @@ export function ReconcilerResultCard({
             </div>
 
             <div className="flex flex-col gap-1">
-              <span className="text-sm text-muted-foreground">{t('feePaid')}</span>
+              <span className="text-sm text-muted-foreground">{t('networkFee')}</span>
               <span className="font-medium text-lg">{txResult.feePaid}</span>
             </div>
 
+            {txResult.recipientAmount && <div className="flex flex-col gap-1"><span className="text-sm text-muted-foreground">{t('recipientReceives')}</span><span dir="ltr">{txResult.recipientAmount} XLM</span></div>}
+            {txResult.routerFeePaid && <div className="flex flex-col gap-1"><span className="text-sm text-muted-foreground">{t('routerFee')}</span><span dir="ltr">{txResult.routerFeePaid} XLM</span></div>}
             <div className="flex flex-col gap-1">
               <span className="text-sm text-muted-foreground">{t('amountSubmitted')}</span>
               <span className="font-bold text-lg">{amount} XLM (Testnet)</span>

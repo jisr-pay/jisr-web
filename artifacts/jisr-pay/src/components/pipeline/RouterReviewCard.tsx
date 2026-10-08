@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import { AlertCircle, ArrowRight, CheckCircle, Loader2 } from 'lucide-react';
 import { useI18nContext } from '@/contexts/I18nContext';
+import { quoteRouterPayment } from '@workspace/jisr-sdk';
+import { networkConfig } from '@/lib/network-config';
 import { CONTRACT_ID } from '@/lib/corridors';
 
 interface RouterReviewCardProps {
@@ -23,6 +25,9 @@ export function RouterReviewCard({
   showSignButton, isSubmitting, isHistoryUnavailable, onConnectWallet, onSubmit,
 }: RouterReviewCardProps) {
   const { t, isRTL } = useI18nContext();
+
+  let quote: ReturnType<typeof quoteRouterPayment> | null = null;
+  try { quote = quoteRouterPayment(amount, networkConfig().routerFeeBps ?? 125); } catch { /* invalid amounts cannot be submitted */ }
 
   return (
     <div className="flex flex-col gap-5 pt-4">
@@ -53,19 +58,23 @@ export function RouterReviewCard({
             <h3 className="text-lg font-semibold">{t('reviewTransfer')}</h3>
             <dl className="grid gap-3 text-sm">
               <div><dt className="text-muted-foreground">{t('sendAmount')}</dt><dd className="text-2xl font-bold" dir="ltr">{amount} XLM</dd></div>
+              {quote && <>
+                <div><dt className="text-muted-foreground">{t('routerFee')}</dt><dd dir="ltr">{quote.routerFeePaid} XLM</dd></div>
+                <div><dt className="text-muted-foreground">{t('recipientReceives')}</dt><dd dir="ltr">{quote.recipientAmount} XLM</dd></div>
+              </>}
               <div><dt className="text-muted-foreground">{t('transferNetwork')}</dt><dd>Stellar Testnet</dd></div>
               <div><dt className="text-muted-foreground">{t('transferFrom')}</dt><dd className="font-mono break-all" dir="ltr">{senderKey ?? t('connectWallet')}</dd></div>
               <div><dt className="text-muted-foreground">{t('transferTo')}</dt><dd className="font-mono break-all" dir="ltr">{resolvedKey}</dd></div>
             </dl>
             <p className="text-sm text-muted-foreground">{t('reviewTransferHelp')}</p>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <span className="text-xs text-muted-foreground block mb-1">{t('contractAddress')}</span>
                 <span className="text-sm font-mono">{CONTRACT_ID().slice(0, 10)}...{CONTRACT_ID().slice(-4)}</span>
               </div>
               <div>
-                <span className="text-xs text-muted-foreground block mb-1">{t('fee')}</span>
-                <span className="text-sm font-medium">Review the transaction and network fee in Freighter</span>
+                <span className="text-xs text-muted-foreground block mb-1">{t('networkFee')}</span>
+                <span className="text-sm font-medium">{t('networkFeeReview')}</span>
               </div>
               <div>
                 <span className="text-xs text-muted-foreground block mb-1">Est. {t('speed')}</span>
@@ -91,7 +100,7 @@ export function RouterReviewCard({
               {showSignButton && (
                 <button
                   onClick={onSubmit}
-                  disabled={!senderKey || !resolvedKey || walletStatus !== 'freighter' || isSubmitting || isHistoryUnavailable}
+                  disabled={!quote || !senderKey || !resolvedKey || walletStatus !== 'freighter' || isSubmitting || isHistoryUnavailable}
                   className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : t('signTransfer')}

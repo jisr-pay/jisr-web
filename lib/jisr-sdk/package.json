@@ -1,6 +1,6 @@
 {
   "name": "@workspace/jisr-sdk",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Reusable Stellar payment primitives for Jisr Pay: amounts, errors, journal, settlement, network config, rate limiting.",
   "license": "MIT",
   "type": "module",
@@ -46,12 +46,16 @@
       "types": "./dist/transfer-history.d.ts",
       "default": "./dist/transfer-history.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./router-evidence": {
+      "types": "./dist/router-evidence.d.ts",
+      "default": "./dist/router-evidence.js"
+    }
   },
   "scripts": {
     "build": "tsc --build",
     "prepack": "npm run build",
-    "test": "npm run build && node --experimental-strip-types --test src/amount.test.ts src/errors.test.ts src/network-config.test.ts src/payment.test.ts src/rateLimit.test.ts src/settlement.test.ts src/transfer-history.test.ts src/index.test.ts",
+    "test": "npm run build && node --experimental-strip-types --test src/amount.test.ts src/errors.test.ts src/network-config.test.ts src/payment.test.ts src/rateLimit.test.ts src/settlement.test.ts src/transfer-history.test.ts src/index.test.ts src/router-evidence.test.ts",
     "typecheck": "tsc --build"
   },
   "dependencies": {

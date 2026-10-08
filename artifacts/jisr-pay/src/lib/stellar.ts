@@ -15,16 +15,18 @@ import {
 } from '@stellar/stellar-sdk';
 import {
   AppError,
-  buildAndSubmitPayment,
+  buildAndSubmitVerifiedPayment,
+  fetchVerifiedRouterSettlement,
+  type SavedTransfer,
   classifyError,
   createLogger,
-  fetchSettlement,
   withRetry,
   type PaymentCallbacks,
   type PaymentWallet,
   type TransactionResult,
   type TransferSettlement,
 } from '@workspace/jisr-sdk';
+import { assertWalletNetwork } from './wallet-network.ts';
 import { networkConfig } from './network-config.ts';
 import { interpretConnectResponse, isDeclineError, type ConnectResult } from './wallet-connect.ts';
 
@@ -54,24 +56,12 @@ export function detectWalletEnvironment(): 'freighter' | 'mobile' | 'none' {
   return 'freighter';
 }
 
-// Best-effort guard: if Freighter is on a non-testnet network the payment would
-// sign against the wrong chain. If we can read the network and it isn't testnet,
-// stop early with a clear message. If we can't read it, proceed (signing still
-// targets testnet) rather than blocking a legitimate payment.
+// Require a positive network report before requesting a payment signature.
 async function assertTestnetNetwork(networkPassphrase: string): Promise<void> {
   let details;
-  try {
-    details = await getNetworkDetails();
-  } catch {
-    return;
-  }
-  if (details && !details.error && details.networkPassphrase &&
-      details.networkPassphrase !== networkPassphrase) {
-    throw new AppError(
-      'WRONG_NETWORK',
-      'Freighter is set to the wrong network. Switch it to Test Net and try again.',
-    );
-  }
+  try { details = await getNetworkDetails(); }
+  catch { throw new AppError('NETWORK', 'Could not verify the wallet network. Reconnect Freighter on Test Net.'); }
+  assertWalletNetwork(details, networkPassphrase);
 }
 
 // Adapts Freighter to the SDK's PaymentWallet port: no browser code leaks into
@@ -171,19 +161,24 @@ export function buildAndSubmitFreighterPayment(
   amountXLM: string,
   callbacks: PaymentCallbacks,
 ): Promise<TransactionResult> {
-  return buildAndSubmitPayment(freighterWallet, networkConfig(), senderKey, recipientKey, amountXLM, callbacks);
+  return buildAndSubmitVerifiedPayment(freighterWallet, networkConfig(), senderKey, recipientKey, amountXLM, callbacks);
 }
 
 export { type TransactionResult } from '@workspace/jisr-sdk';
 
-export function lookupSettlement(hash: string): Promise<TransferSettlement | null> {
-  return fetchSettlement(networkConfig().horizonUrl, hash);
+export function lookupSettlement(record: SavedTransfer): Promise<TransferSettlement | null> {
+  const config = networkConfig();
+  // Native history remains remotely verifiable through the API; a hash alone is insufficient locally.
+  if (!record.contractId) return Promise.resolve(null);
+  return fetchVerifiedRouterSettlement(config.horizonUrl, config.rpcUrl,
+    { hash: record.hash, sender: record.sender, recipient: record.recipient, amount: record.amount, contractId: record.contractId },
+    { contractId: config.contractId, tokenAddress: config.tokenAddress, treasuryAddress: config.treasuryAddress, feeBps: config.routerFeeBps ?? 125 });
 }
 
 // Polls Horizon for the confirmed transaction and returns the real on-chain
 // fee and ledger. Throws if the transaction failed or never appears.
 export async function pollSettlement(
-  hash: string,
+  record: SavedTransfer,
   onUpdate: (status: string) => void,
 ): Promise<TransferSettlement> {
   let attempts = 0;
@@ -192,7 +187,7 @@ export async function pollSettlement(
   while (attempts < 30 && Date.now() < deadline) {
     let tx;
     try {
-      tx = await lookupSettlement(hash);
+      tx = await lookupSettlement(record);
     } catch {
       onUpdate('awaitingSettlement');
       await new Promise((r) => setTimeout(r, 1000));
@@ -206,7 +201,7 @@ export async function pollSettlement(
       continue;
     }
     if (tx.successful === false) {
-      throw new AppError('CONTRACT_FAILED', `Transaction ${hash} failed on-chain (ledger ${tx.ledger})`);
+      throw new AppError('CONTRACT_FAILED', `Transaction ${record.hash} failed on-chain (ledger ${tx.ledger})`);
     }
     log.info('Settlement confirmed on Horizon', { hash: tx.hash, ledger: tx.ledger });
     onUpdate('settled');

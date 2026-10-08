@@ -119,7 +119,7 @@ test('registration retries preserve immutable identity and exclude local settlem
   await f.client.register(record); await f.client.register(record);
   assert.equal(bodies[0], bodies[1]);
   assert.deepEqual(Object.keys(JSON.parse(bodies[0])).sort(), ['hash', 'network', 'asset', 'sender', 'recipient', 'amount', 'contractId', 'submittedAt'].sort());
-  await assert.rejects(f.client.register({ ...record, contractId: `C${'A'.repeat(55)}` }), code('invalid'));
+  await assert.rejects(f.client.register({ ...record, contractId: 'bad' }), code('invalid'));
   assert.equal(bodies.length, 2);
 });
 test('settlement evidence must match hash and status and contain valid receipt fields', () => {
@@ -152,4 +152,15 @@ test('wallet changes while receiving a response invalidate the returned records'
   f.setHistory(async () => { f.changeWallet(); return response({ records: [record], nextCursor: null }); });
   await assert.rejects(f.client.list(), code('wallet'));
   assert.equal(f.client.authenticated, false);
+});
+
+test('supported router records preserve contract identity when backed up', async () => {
+  const f = fixture(); await f.client.login();
+  const routed = { ...record, contractId: 'CCGSUUQLWXKU6AZ6YKUNXLR7R6KLBYBG4AJGJ54XV4DC63AJ3LDVPNW4' };
+  let payload: Record<string, unknown> | undefined;
+  f.setHistory(async (_url, init) => { payload = JSON.parse(init.body as string); return response({ record: routed }); });
+  const saved = await f.client.register(routed);
+  assert.equal(saved.contractId, routed.contractId);
+  assert.equal(payload?.contractId, routed.contractId);
+  assert.ok(!('settlement' in payload!));
 });
