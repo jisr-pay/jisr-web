@@ -33,8 +33,11 @@ export { createLogger, setLogSink, type Logger, type LogSink } from './logger.ts
 export { enforce, record, retryAfter, setClock, RULES } from './rateLimit.ts';
 export {
   buildAndSubmitPayment,
+  buildAndSubmitVerifiedPayment,
   withRetry,
   type PaymentCallbacks,
   type PaymentWallet,
   type TransactionResult,
 } from './payment.ts';
+
+export { quoteRouterPayment, validateRouterPolicy, verifyRouterPayment, fetchRouterPaymentEvidence, fetchVerifiedRouterSettlement, type RouterPolicy, type RouterClaim, type RouterProof } from './router-evidence.ts';

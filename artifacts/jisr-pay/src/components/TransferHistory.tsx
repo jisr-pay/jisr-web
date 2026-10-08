@@ -21,7 +21,7 @@ export function TransferHistory({ walletKey }: { walletKey: string | null }) {
     checkingRef.current = true;
     setCheckingHash(record.hash);
     try {
-      const settlement = await lookupSettlement(record.hash);
+      const settlement = await lookupSettlement(record);
       if (!settlement) {
         toast({ title: t('historyStillPending'), description: t('historyPendingHelp') });
         return;

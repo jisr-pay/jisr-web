@@ -45,7 +45,7 @@ const wallet: PaymentWallet = {
 
 const account = () => new Account(sender.publicKey(), '100');
 
-const getTx = (status: string) => ({ status }) as unknown as rpc.Api.GetTransactionResponse;
+const getTx = (status: string) => ({ status, ledger: 104 }) as unknown as rpc.Api.GetTransactionResponse;
 
 /** The four RPC methods buildAndSubmitPayment uses; fakes override exactly these. */
 type RpcOverrides = Partial<Record<'getAccount' | 'prepareTransaction' | 'sendTransaction' | 'getTransaction', (...args: never[]) => unknown>>;
@@ -74,7 +74,7 @@ const happyPath: RpcOverrides = {
     txHash = (tx as unknown as { hash: () => Buffer }).hash().toString('hex');
     return tx;
   },
-  sendTransaction: async () => ({ status: 'PENDING', hash: txHash }),
+  sendTransaction: async (tx) => ({ status: 'PENDING', hash: (tx as unknown as {hash:()=>Buffer}).hash().toString('hex') }),
   getTransaction: async () => getTx('SUCCESS'),
 };
 
@@ -244,4 +244,34 @@ test('a TransactionResult maps into a valid native-XLM SavedTransfer with contra
     status: 'pending',
   } as const;
   assert.ok(isSavedTransfer(record), 'native-XLM record shape (contractId: null) must be valid');
+});
+
+
+test('a wallet cannot change the prepared payment before broadcast', async () => {
+ const other = new Account(sender.publicKey(), '200');
+ const { TransactionBuilder, Contract, BASE_FEE } = await import('@stellar/stellar-sdk');
+ const changed = new TransactionBuilder(other, {fee:BASE_FEE,networkPassphrase:TESTNET_PASSPHRASE}).addOperation(new Contract(config.contractId).call('policy')).setTimeout(60).build();
+ let sent = false;
+ await assertAppError(pay({pending:[],failures:[]}, fakeServer({...happyPath,sendTransaction:async()=>{sent=true;}}), '1', {...wallet,signTransaction:async()=>changed.toXDR()}), 'UNKNOWN', 'wallet changed');
+ assert.equal(sent,false);
+});
+test('a mismatched RPC response hash leaves the original journal pending', async () => {
+ const h={pending:[],failures:[]} as Harness;
+ await assertAppError(pay(h,fakeServer({...happyPath,sendTransaction:async()=>({status:'PENDING',hash:'a'.repeat(64)})})), 'TIMEOUT','different transaction hash');
+ assert.equal(h.pending.length,1);assert.equal(h.failures.length,0);
+});
+
+test('verified payment flow never returns success on missing contract evidence', async () => {
+ const {buildAndSubmitVerifiedPayment}=await import('./payment.ts');
+ const h={pending:[],failures:[]} as Harness;
+ await assertAppError(buildAndSubmitVerifiedPayment(wallet,config,sender.publicKey(),recipient.publicKey(),'1',callbacks(h),{rpcServer:fakeServer(happyPath),evidenceFetcher:async(_url,options)=>{
+  const request=JSON.parse(options?.body as string);return new Response(JSON.stringify({jsonrpc:'2.0',id:1,result:request.method==='getNetwork'?{passphrase:TESTNET_PASSPHRASE}:{status:'NOT_FOUND'}}));
+ }}), 'TIMEOUT','evidence is incomplete');
+ assert.equal(h.pending.length,1);assert.equal(h.failures.length,0);
+});
+
+test('temporary RPC refusal preserves the saved transfer pending', async () => {
+ const h={pending:[],failures:[]} as Harness;
+ await assertAppError(pay(h,fakeServer({...happyPath,sendTransaction:async()=>({status:'TRY_AGAIN_LATER',hash:txHash})})), 'RATE_LIMITED','pending transfer');
+ assert.equal(h.pending.length,1);assert.equal(h.failures.length,0);
 });

@@ -17,6 +17,7 @@ import {
 import { AppError, classifyError } from './errors.ts';
 import { createLogger } from './logger.ts';
 import { parseAmountToStroops } from './amount.ts';
+import { fetchRouterPaymentEvidence, validateRouterPolicy, quoteRouterPayment } from './router-evidence.ts';
 import { type NetworkConfig } from './network-config.ts';
 
 const log = createLogger('payment');
@@ -32,6 +33,8 @@ export interface PaymentWallet {
 export interface TransactionResult {
   hash: string;
   createdAt?: string;
+  recipientAmount?: string;
+  routerFeePaid?: string;
   feePaid: string;
   settlementTimeMs: number;
   ledger: number;
@@ -129,6 +132,9 @@ export async function buildAndSubmitPayment(
   log.info('Requesting signature');
   const signedTxXdr = await wallet.signTransaction(prepared.toXDR(), senderKey, network);
   const signedTx = TransactionBuilder.fromXDR(signedTxXdr, network.networkPassphrase);
+  if (signedTx.hash().toString('hex') !== prepared.hash().toString('hex')) {
+    throw new AppError('UNKNOWN', 'The wallet changed the prepared transaction. Nothing was broadcast.');
+  }
 
   const start = Date.now();
   const pending = {
@@ -149,6 +155,9 @@ export async function buildAndSubmitPayment(
     // confirmation can be retried without submitting a second payment.
     throw new AppError('TIMEOUT', 'Submission response unavailable. Check the transaction before sending again.');
   }
+  if (sendResponse.hash !== pending.hash) {
+    throw new AppError('TIMEOUT', 'RPC returned a different transaction hash. Check the saved transfer before retrying.');
+  }
   if (sendResponse.status === 'ERROR') {
     callbacks.onFailed(pending.hash);
     log.error('Soroban RPC rejected transaction', sendResponse);
@@ -158,8 +167,8 @@ export async function buildAndSubmitPayment(
     );
   }
   if (sendResponse.status === 'TRY_AGAIN_LATER') {
-    callbacks.onFailed(pending.hash);
-    throw new AppError('RATE_LIMITED', 'Stellar could not accept the transaction yet. Please try again shortly.');
+    // Temporary refusal by one RPC does not prove that the signed transaction failed on-chain.
+    throw new AppError('RATE_LIMITED', 'Stellar is busy. Check the saved pending transfer before sending again.');
   }
 
   let getResponse = await server.getTransaction(sendResponse.hash);
@@ -183,11 +192,36 @@ export async function buildAndSubmitPayment(
     );
   }
 
-  log.info('Payment confirmed', { hash: sendResponse.hash, ledger: getResponse.ledger });
+  if (!Number.isSafeInteger(getResponse.ledger) || getResponse.ledger <= 0) {
+    throw new AppError('TIMEOUT', 'RPC confirmation is incomplete. Check the saved transfer before retrying.');
+  }
+  log.info('Transaction successful', { hash: sendResponse.hash, ledger: getResponse.ledger });
   return {
     hash: sendResponse.hash,
     feePaid: `${(Number(prepared.fee) / 10_000_000).toFixed(7)} XLM`,
     settlementTimeMs: Date.now() - start,
     ledger: getResponse.ledger,
   };
+}
+
+
+/** Broadcast through the wallet port, then prove the exact router payment before returning success. */
+export async function buildAndSubmitVerifiedPayment(
+  wallet: PaymentWallet, network: NetworkConfig, sender: string, recipient: string,
+  amount: string, callbacks: PaymentCallbacks,
+  options: { rpcServer?: rpc.Server; evidenceFetcher?: typeof fetch } = {},
+): Promise<TransactionResult> {
+  const policy = { contractId: network.contractId, treasuryAddress: network.treasuryAddress,
+    tokenAddress: network.tokenAddress, feeBps: network.routerFeeBps ?? 125 };
+  // Reject policy errors before asking for a signature or sending funds.
+  validateRouterPolicy(policy);
+  const result = await buildAndSubmitPayment(wallet, network, sender, recipient, amount, callbacks, options);
+  const proof = await fetchRouterPaymentEvidence(network.rpcUrl,
+    { hash: result.hash, sender, recipient, amount, contractId: network.contractId }, policy,
+    { fetcher: options.evidenceFetcher });
+  if (!proof.paymentVerified || proof.ledger !== result.ledger) {
+    throw new AppError('TIMEOUT', 'Payment evidence is incomplete. Keep this transfer pending and check it before sending again.');
+  }
+  const amounts = quoteRouterPayment(amount, policy.feeBps);
+  return { ...result, recipientAmount: amounts.recipientAmount, routerFeePaid: amounts.routerFeePaid };
 }
