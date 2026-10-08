@@ -1,36 +1,51 @@
-# Jisr-Pay: Autonomous AI Agents for Cross-Border Payments
+# Jisr Pay — Stellar developer tooling submission
 
-## 🚀 Pitch
-Cross-border payments today are plagued by high fees, slow settlement times, and opaque routing. Traditional money transmitters often take 3-7% and multiple days to settle a transaction. 
+Submission target: October 9, 2026 (Africa/Lagos). Evidence reviewed October 7.
 
-**Jisr-Pay** fundamentally reimagines this architecture by combining **Stellar's near-instant, low-cost network** with **Autonomous AI Agents**. Instead of static routing, Jisr-Pay dynamically scouts, executes, and verifies transactions on-chain in seconds.
+## Purpose and implemented behavior
 
-## 🤖 The Multi-Agent Architecture
-Jisr-Pay operates using a pipeline of three specialized, autonomous AI agents working in sequence:
+Jisr Pay provides a bilingual payment interface, reusable Stellar payment SDK,
+and durable transfer-tracking API. The web pipeline compares illustrative
+corridor fees, requests a Freighter signature, submits through Soroban RPC,
+and retrieves settlement information. Wallets control signing; the API does
+not sign or rebroadcast payments. Fee comparison data is static and does not
+establish executable fiat quotes or guarantee the cheapest route.
 
-1. **Rate-Scout Agent**: Analyzes global liquidity pools and traditional fiat rails (Bank Wire, Mobile Money, Cash Pickup) against Stellar corridors. It mathematically guarantees the cheapest and fastest route.
-2. **Router Agent**: Takes the optimal path identified by Rate-Scout and constructs the on-chain Stellar transaction. It validates wallet signatures, connects to the Freighter wallet, and securely signs and submits the payload to the network.
-3. **Reconciler Agent**: Listens to the Stellar Horizon network to cryptographically verify the ledger state. Once the transaction hits consensus, the Reconciler generates a mathematically verifiable, branded PDF receipt confirming settlement.
+The SDK currently invokes `route_payment(sender, recipient, treasury, token,
+amount)` on a configured Testnet contract. The original assessment found the contract repository contained
+only a README and LICENSE; deployed source, authorization behavior, fee splits,
+and deployment provenance have not been verified from that repository.
+The API verifies native XLM operation evidence, but does not yet verify
+successful contract payment claims. Aligning these paths is a release gate.
 
-## 🌟 Key Features
-* **Live On-Chain Settlement**: Fully integrated with the Stellar testnet using `@stellar/stellar-sdk` and `@stellar/freighter-api`.
-* **Zero-Knowledge UI**: Users simply input amounts; the AI agents handle the complexity of network fees, transaction enveloping, and ledger polling.
-* **Branded PDF Receipts**: Auto-generated receipts via `jsPDF` providing immutable proof of the transaction hash and savings compared to traditional bank wires.
-* **Client-Side Hardening**: Built-in rate limiting, error normalization, and network-mismatch detection to ensure safe transaction broadcasting.
+## Review links
 
-## 🛠 Tech Stack
-* **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Radix UI.
-* **Blockchain**: Stellar SDK, Freighter API, Horizon RPC.
-* **Design**: Framer Motion (micro-animations), Canvas Confetti, custom UI components.
-* **Deployment**: Vercel.
+- Web demo: https://jisr-pay.vercel.app/ (HTTP 200 verified October 7;
+  this check does not establish wallet acceptance).
+- Web: https://github.com/jisr-pay/jisr-web
+- SDK: https://github.com/jisr-pay/jisr-sdk (standalone repository exists;
+  local workspace copy is `lib/jisr-sdk`).
+- API: https://github.com/jisr-pay/jisr-api
+- Contract: https://github.com/jisr-pay/payment-router-contract
 
-## 🌐 Live Demo & Testing
-**Live URL**: [Insert your Vercel URL here]
+## Reproducible checks
 
-### How to test:
-1. Install the **Freighter Wallet** extension and switch it to **Testnet**.
-2. Fund your wallet using the [Stellar Laboratory Faucet](https://laboratory.stellar.org/#account-creator).
-3. Open the Jisr-Pay app and click **Launch App**.
-4. Connect your Freighter wallet.
-5. Enter a test amount to send and click **Initialize Transfer**.
-6. Watch the AI Agents work in real-time, approve the transaction in Freighter, and download your branded PDF receipt once settled!
+Web: pinned pnpm 11.8.0, `pnpm install --frozen-lockfile`, `pnpm test`,
+`pnpm build`. API: Node 24.15–24.x, `npm ci`, `npm run check:sdk`,
+`npm test`, `npm run build`. Both repositories have Linux/Windows CI.
+See [readiness evidence](docs/WAVE_READINESS.md) for results and outstanding work.
+
+## Submission acceptance
+
+Recover and verify contract source and deployment evidence; record an actual
+wallet-approved Testnet transaction and verify recipient, amount, and event
+semantics. Complete EN/AR, RTL, mobile, reload/recovery, and wallet-decline
+browser checks. Maintainers are xteesamz and EthTobi, available anytime via GitHub; the owner
+confirms the Drips Wave App is installed. Verify its target-repository permissions. Submit each repository
+on the strength of its implemented behavior and demonstrated ecosystem utility.
+Mainnet support remains a future milestone requiring matching configuration,
+authorization/security review, evidence verification, and operational acceptance.
+
+## October 8 router evidence
+
+A new independently tested router now has six passing Soroban tests, release WASM and a fresh [Testnet contract](https://stellar.expert/explorer/testnet/contract/CCGSUUQLWXKU6AZ6YKUNXLR7R6KLBYBG4AJGJ54XV4DC63AJ3LDVPNW4). The [authorized payment](https://stellar.expert/explorer/testnet/tx/6e79ed7847d34d19fb0d9f8bf43282cd583972537a41d539559a610a7f108910) produced exact recipient/treasury credits. This is independent contract evidence; current browser configuration, wallet acceptance and API contract-event verification remain separate gates.

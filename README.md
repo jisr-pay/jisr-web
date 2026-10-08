@@ -6,7 +6,10 @@
 
 > **Gulf ↔ Africa remittances at Stellar speed — AI-routed, blockchain-settled, a fraction of the cost.**
 
-Jisr Pay is a hackathon fintech demo for Gulf-to-Africa remittances. Its three-stage pipeline (Rate-Scout → Router → Reconciler) compares illustrative fees, builds a native XLM payment on Stellar Testnet, and checks its network result. The comparison data is static; it does not execute bank transfers, convert fiat currencies, or use a live AI routing service. The app supports English and Arabic with RTL layouts.
+Jisr Pay is a modular Stellar payment interface for Gulf-to-Africa remittance scenarios. Its three-stage pipeline (Rate-Scout → Router → Reconciler) compares illustrative fees, builds a Soroban `route_payment` invocation for Testnet XLM, and checks its network result. The comparison data is static; it does not execute bank transfers, convert fiat currencies, or use a live AI routing service. The app supports English and Arabic with RTL layouts.
+
+For the October 9, 2026 submission, see [the submission brief](SUBMISSION.md),
+[readiness evidence](docs/WAVE_READINESS.md), and [engineering backlog](docs/WAVE_BACKLOG.md).
 
 ---
 
@@ -14,12 +17,12 @@ Jisr Pay is a hackathon fintech demo for Gulf-to-Africa remittances. Its three-s
 
 | Feature | Details |
 |---|---|
-| **3-Agent Pipeline** | Rate-Scout scans corridors, Router resolves addresses & builds Stellar txs, Reconciler polls the ledger and confirms settlement |
-| **Stellar Blockchain** | Real `@stellar/stellar-sdk` integration for native Testnet XLM; Mainnet configuration is rejected |
+| **3-Agent Pipeline** | Rate-Scout compares illustrative corridors, Router resolves addresses & builds a contract invocation, Reconciler polls transaction status |
+| **Stellar Blockchain** | `@stellar/stellar-sdk` integration for a Testnet XLM contract invocation; Mainnet configuration is rejected |
 | **Freighter Wallet** | Native browser-extension wallet connect; graceful fallback for mobile |
 | **Corridor Comparison** | Illustrative fee/speed table with percentage and fixed charges; not a live quote |
 | **English / Arabic** | Full i18n with RTL layout mirroring, IBM Plex Sans Arabic, `dir` switching |
-| **PDF Receipts** | Branded `jspdf` receipt with hash, addresses, fee and savings for every confirmed transfer |
+| **PDF Receipts** | Branded `jspdf` receipt with hash, addresses and fee for confirmed transfers |
 | **Transfer History & Recovery** | Per-browser journal of signed transfers; pending transfers can be re-checked without re-signing |
 | **Light / Dark Theme** | Semantic design tokens across both themes, user-switchable and persisted |
 | **Jisr Copilot** | Floating assistant answering preset questions about fees, agents and corridors (canned responses, not a live LLM) |
@@ -30,8 +33,8 @@ Jisr Pay is a hackathon fintech demo for Gulf-to-Africa remittances. Its three-s
 
 ## 🗺️ Illustrative Corridor Scenarios
 
-These are product examples, not operational fiat payout integrations. Actual
-payments in the dashboard use native Testnet XLM between Stellar accounts.
+These are product examples, not operational fiat payout integrations. The dashboard invokes a configured Soroban router using the Testnet XLM token.
+Source provenance and full payment-event verification remain release gates.
 
 | From | To | Methods |
 |---|---|---|
@@ -105,8 +108,10 @@ remain uncertain; only an explicit network result confirms or fails a transfer.
 Confirmed transfers offer receipts after a fresh network check. Connecting a
 wallet filters history to transfers sent by that wallet.
 
-History is local to this browser; clearing site data removes it. Cross-device
-history and recovery require a backend and are not implemented.
+Local history survives refreshes until site data is cleared. Optional authenticated
+API history is implemented for native registrations (`contractId: null`); the
+current contract payment flow is not yet aligned with that path. See
+[wallet history](docs/WALLET_HISTORY.md) and [release gates](docs/WAVE_READINESS.md).
 
 Run `pnpm test` for the SDK suite (amount parsing, journal recovery,
 confirmation-response validation, configuration, rate limiting and the Node
@@ -215,4 +220,5 @@ Toggle between English and Arabic using the **عربي / EN** button in the nav.
 
 ## 📄 License
 
-MIT — built for hackathon demonstration purposes. Not financial advice; Testnet only.
+MIT. Current signing configuration supports Stellar Testnet. See the
+[submission evidence and release gates](docs/WAVE_READINESS.md) before deployment.

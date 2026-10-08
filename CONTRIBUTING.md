@@ -5,7 +5,10 @@ Run `pnpm install --frozen-lockfile`, then `pnpm dev` from the repository root.
 The dashboard is at `/app`. Optional public frontend settings are documented
 in `artifacts/jisr-pay/.env.example`.
 
-Before opening a pull request, run `pnpm test` and `pnpm build`.
+Use `feat/<topic>`, `fix/<topic>`, `docs/<topic>`, or `test/<topic>` branches.
+Before opening a pull request, run `pnpm test` and `pnpm build`. Required CI
+checks must pass before merge. Include `Closes #<issue_id>` for the implemented
+issue; open a tracking issue first if needed. Include screenshots for UI changes.
 Explain the user-visible problem, the resulting behavior, and any checks you
 could not run. Keep related changes together and avoid unrelated lockfile edits.
 
