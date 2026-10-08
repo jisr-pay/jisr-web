@@ -151,3 +151,12 @@ trivial; planning only. Actual Wave complexity and enrollment are set by maintai
 ## Contribution
 
 Open a focused feat/fix/test/docs branch. PRs explain behavior and actual validation and include Closes #<issue_id>. Follow CONTRIBUTING.md and SECURITY.md.
+
+## Published contributor issues
+
+- [Align browser transfers with API-supported evidence](https://github.com/jisr-pay/jisr-web/issues/34) — proposed high.
+- [Record Testnet wallet acceptance for the new router](https://github.com/jisr-pay/jisr-web/issues/35) — proposed medium.
+- [Exercise Arabic mobile payment recovery](https://github.com/jisr-pay/jisr-web/issues/36) — proposed medium.
+- [Verify deployed wallet session and API proxy configuration](https://github.com/jisr-pay/jisr-web/issues/37) — proposed medium.
+- [Explain router policy and fee before signing](https://github.com/jisr-pay/jisr-web/issues/38) — proposed medium.
+- [Publish a source-to-deployment verification record](https://github.com/jisr-pay/jisr-web/issues/39) — proposed trivial.
