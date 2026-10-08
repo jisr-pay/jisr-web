@@ -1,3 +1,4 @@
+import { StrKey } from '@stellar/stellar-sdk';
 export const TESTNET_PASSPHRASE = 'Test SDF Network ; September 2015';
 export const TESTNET_XLM_TOKEN = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC';
 
@@ -10,6 +11,7 @@ export interface NetworkConfig {
   rpcUrl: string;
   horizonUrl: string;
   networkPassphrase: string;
+  routerFeeBps?: number;
   network: 'TESTNET';
 }
 
@@ -22,7 +24,7 @@ export function resolveNetworkConfig(env: Record<string, string | undefined>): N
   if (token !== TESTNET_XLM_TOKEN) throw new Error('Jisr Pay currently supports native Testnet XLM only.');
   const address = (key: string, fallback: string, prefix: 'C' | 'G') => {
     const value = setting(key, fallback);
-    if (!new RegExp(`^${prefix}[A-Z2-7]{55}$`).test(value)) throw new Error(`Invalid ${key}.`);
+    if (!(prefix === 'C' ? StrKey.isValidContract(value) : StrKey.isValidEd25519PublicKey(value))) throw new Error(`Invalid ${key}.`);
     return value;
   };
   const endpoint = (key: string, fallback: string) => {
@@ -33,9 +35,12 @@ export function resolveNetworkConfig(env: Record<string, string | undefined>): N
     }
     return url.toString().replace(/\/+$/, '');
   };
+  const fee = setting('VITE_ROUTER_FEE_BPS', '125');
+  if (!/^\d+$/.test(fee) || Number(fee) > 1000) throw new Error('Invalid VITE_ROUTER_FEE_BPS.');
   return {
-    contractId: address('VITE_CONTRACT_ID', 'CDNQ7OMHIFOLZHOKWQLOGDW7CF3DRMKXJC6OULNGNBWF4O4NO2NEIGER', 'C'),
-    treasuryAddress: address('VITE_TREASURY_ADDRESS', 'GAAFWEZKDYPXLTQGKQ3F23TXWYQUDAYTDW7P7VUQSVJFW2GWC4Y6LWST', 'G'),
+    routerFeeBps: Number(fee),
+    contractId: address('VITE_CONTRACT_ID', 'CCGSUUQLWXKU6AZ6YKUNXLR7R6KLBYBG4AJGJ54XV4DC63AJ3LDVPNW4', 'C'),
+    treasuryAddress: address('VITE_TREASURY_ADDRESS', 'GBHS7NUWCDQAQSC2DFM5E7BBYRD74KVJPCVE3OVYMU7LBQDSJBY34AAP', 'G'),
     tokenAddress: token,
     federationUrl: endpoint('VITE_FEDERATION_API_BASE', 'https://stellar-tags-production.up.railway.app'),
     rpcUrl: endpoint('VITE_SOROBAN_RPC_URL', 'https://soroban-testnet.stellar.org'),

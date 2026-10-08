@@ -71,7 +71,7 @@ export function RemoteTransferHistory({ walletKey, localTransfers, onRestore }: 
     {signedIn && <>
       <h4 className="mt-4 font-medium">{t('remoteUpload')}</h4>
       <p className="text-sm text-muted-foreground">{t('remoteUploadHelp')}</p>
-      <ul className="mt-3 space-y-2">{localTransfers.filter(record => record.sender === walletKey && record.contractId === null).map(record =>
+      <ul className="mt-3 space-y-2">{localTransfers.filter(record => record.sender === walletKey).map(record =>
         <li key={record.hash} className="flex flex-wrap items-center gap-3">
           <span className="font-mono text-xs break-all" dir="ltr">{record.hash}</span>
           <button className={buttonClass} disabled={busy} onClick={() => run(async current => {
