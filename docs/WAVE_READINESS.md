@@ -49,8 +49,8 @@ These runs concern existing remote commits, not the unpushed changes.
 The organization `.github` repository already supplies CONTRIBUTING.md,
 SECURITY.md, CODE_OF_CONDUCT.md, and a PR template. This upgrade adds a maintainer
 record and issue-link/branch conventions; the API gains local contribution guidance.
-The owner confirmed EthTobi and xteesamz as maintainers on October 7, matching
-the public membership listing. The owner confirmed GitHub contact and anytime availability. Component roles
+The owner confirmed EthTobi as a maintainer on October 7. Confirm current
+organization membership and GitHub App coverage before applying to Drips. The owner confirmed GitHub contact and anytime availability. Component roles
 still need confirmation. A web `main-protection` ruleset is active. The API
 ruleset endpoint returned no repository rulesets; branch protection or inherited
 organization rules must be inspected separately before concluding it is unprotected.
