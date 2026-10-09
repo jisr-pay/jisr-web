@@ -1,55 +1,34 @@
-# Jisr Pay — Stellar developer tooling submission
+# Jisr Pay ? Stellar Testnet submission evidence
 
-Submission target: October 9, 2026 (Africa/Lagos). Evidence reviewed October 7.
+Updated October 9, 2026. This repository is a bilingual browser interface for native XLM payments through the source-built Testnet router. The browser consumes SDK 0.4.0, requires a positive wallet network report, verifies exact router/token events before confirmation, and saves transfer identity for recovery after reload. Corridor price comparisons are illustrative, not live executable exchange quotes.
 
-## Purpose and implemented behavior
+## Current deployment and evidence
 
-Jisr Pay provides a bilingual payment interface, reusable Stellar payment SDK,
-and durable transfer-tracking API. The web pipeline compares illustrative
-corridor fees, requests a Freighter signature, submits through Soroban RPC,
-and retrieves settlement information. Wallets control signing; the API does
-not sign or rebroadcast payments. Fee comparison data is static and does not
-establish executable fiat quotes or guarantee the cheapest route.
+Live app: https://jisr-web.vercel.app/app
+Docs: https://jisr-web.vercel.app/docs
 
-The SDK currently invokes `route_payment(sender, recipient, treasury, token,
-amount)` on a configured Testnet contract. The original assessment found the contract repository contained
-only a README and LICENSE; deployed source, authorization behavior, fee splits,
-and deployment provenance have not been verified from that repository.
-The API verifies native XLM operation evidence, but does not yet verify
-successful contract payment claims. Aligning these paths is a release gate.
+The replacement deployment under EthTobi responds successfully and contains the current router/treasury configuration. The earlier browser tests were performed on a previous preview origin. The maintainer reported successful signing and confirmed both records remained Confirmed after reload. The two transactions were independently verified through Horizon and SDK router evidence:
 
-## Review links
+| Total | Recipient | Treasury | Transaction |
+| --- | --- | --- | --- |
+| 4 XLM | 3.95 XLM | 0.05 XLM | [Explorer](https://stellar.expert/explorer/testnet/tx/81be73ff054b776938ade7c0efec3f790f433f67a2c34ab7c651c6bd10414ea8) |
+| 7 XLM | 6.9125 XLM | 0.0875 XLM | [Explorer](https://stellar.expert/explorer/testnet/tx/1d90c10536b96038e32982c517a5fae2123acf968e265be2c365facb314e2a95) |
 
-- Web demo: https://jisr-pay.vercel.app/ (HTTP 200 verified October 7;
-  this check does not establish wallet acceptance).
-- Web: https://github.com/jisr-pay/jisr-web
-- SDK: https://github.com/jisr-pay/jisr-sdk (standalone repository exists;
-  local workspace copy is `lib/jisr-sdk`).
-- API: https://github.com/jisr-pay/jisr-api
-- Contract: https://github.com/jisr-pay/payment-router-contract
+Each transaction charged an additional 0.002359 XLM network fee. These are Testnet demonstrations, not adoption or Mainnet evidence. A separate payment on the new hostname has not been independently observed.
 
-## Reproducible checks
+## Validation and implementation
 
-Web: pinned pnpm 11.8.0, `pnpm install --frozen-lockfile`, `pnpm test`,
-`pnpm build`. API: Node 24.15–24.x, `npm ci`, `npm run check:sdk`,
-`npm test`, `npm run build`. Both repositories have Linux/Windows CI.
-See [readiness evidence](docs/WAVE_READINESS.md) for results and outstanding work.
+Merged implementation: [PR #42](https://github.com/jisr-pay/jisr-web/pull/42).
+Deployment docs correction: [PR #44](https://github.com/jisr-pay/jisr-web/pull/44).
 
-## Submission acceptance
+Local checks passed on Node 24.19.0: 62 shared SDK tests, 37 app tests, full workspace typechecks and production build. Run the pinned pnpm 11.8.0: `pnpm install --frozen-lockfile`, `pnpm test`, `pnpm build`.
 
-Recover and verify contract source and deployment evidence; record an actual
-wallet-approved Testnet transaction and verify recipient, amount, and event
-semantics. Complete EN/AR, RTL, mobile, reload/recovery, and wallet-decline
-browser checks. Maintainers are xteesamz and EthTobi, available anytime via GitHub; the owner
-confirms the Drips Wave App is installed. Verify its target-repository permissions. Submit each repository
-on the strength of its implemented behavior and demonstrated ecosystem utility.
-Mainnet support remains a future milestone requiring matching configuration,
-authorization/security review, evidence verification, and operational acceptance.
+Reviewed runtime revision after author rewrite: https://github.com/jisr-pay/jisr-web/commit/efd3b5c447ae49c9eadae9e010f6f371f2c263ed
 
-## October 8 router evidence
+Fresh passing CI: https://github.com/jisr-pay/jisr-web/actions/runs/37887155696
 
-A new independently tested router now has six passing Soroban tests, release WASM and a fresh [Testnet contract](https://stellar.expert/explorer/testnet/contract/CCGSUUQLWXKU6AZ6YKUNXLR7R6KLBYBG4AJGJ54XV4DC63AJ3LDVPNW4). The [authorized payment](https://stellar.expert/explorer/testnet/tx/6e79ed7847d34d19fb0d9f8bf43282cd583972537a41d539559a610a7f108910) produced exact recipient/treasury credits. This is independent contract evidence; current browser configuration, wallet acceptance and API contract-event verification remain separate gates.
+## Supported scope and remaining work
 
-## October 8 integrated verification
+Native Stellar Testnet XLM only. Local browser history works; remote wallet backup is disabled because a public persistent API and same-origin /v1/wallet proxy are not deployed. Browser history is scoped to each hostname and does not automatically migrate. The treasury is a disposable demo account. Full mobile/RTL acceptance, wallet-decline acceptance, an operational treasury, Mainnet, security audit and operator adoption are not established.
 
-The browser now uses the SDK 0.4.0 verified payment flow, requires a positive wallet network report, and checks saved transfer identities on confirmation/recovery. Supported router transfers can be sent to wallet backup; the API independently verifies invocation and successful routed/native-token events. The SDK Node-signer demo and local HTTP API confirmed a fresh Testnet fee-split payment. Real Freighter, RTL/mobile and deployed-service acceptance remain separate checks; see docs/ROUTER_INTEGRATION.md.
+SDK/API integration is merged. Contract/routing implementation remains reviewable in its own repositories and must be merged before presenting it as default-branch implementation. Documentation, author redistribution and Vercel account migration alone are not substantive grounds for a Drips appeal. Check the dashboard's rejection feedback and eligibility before submitting an appeal.

@@ -1,3 +1,9 @@
+# Current readiness update ? October 9
+
+Use [SUBMISSION.md](../SUBMISSION.md) for the current deployment, merged integration, new revisions/CI and verified Testnet payment evidence. The October 7 assessment below is historical; its old URL, hashes and integration gaps have been superseded. API hosting and full browser acceptance limits remain explicitly documented in the current brief.
+
+---
+
 # Jisr Wave readiness — October 9, 2026
 
 ## Audit scope and evidence

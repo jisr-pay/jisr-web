@@ -1,7 +1,7 @@
 # Jisr-Pay 🌉 — Global Marketing & Growth Strategy
 
 > **"Remittances at the Speed of Stellar: 0.4% Fees. 5-Second Settlement."**
-> The blueprint to turn [Jisr-Pay](https://jisr-pay.vercel.app/) into a globally recognized cross-border fintech giant across Gulf ↔ Africa corridors and beyond.
+> The blueprint to turn [Jisr-Pay](https://jisr-web.vercel.app/) into a globally recognized cross-border fintech giant across Gulf ↔ Africa corridors and beyond.
 
 ---
 
